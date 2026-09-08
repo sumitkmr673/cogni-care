@@ -1,0 +1,18 @@
+[project]
+name = "sih2026-backend"
+version = "0.1.0"
+description = "Backend for SIH 2026 cognitive gaming and memory assistance platform"
+requires-python = ">=3.14,<3.15"
+
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn[standard]==0.52.4",
+    "pydantic==2.13.5",
+    "sqlalchemy==2.0.52",
+    "psycopg[binary]==3.3.5",
+    "alembic==1.19.2",
+]
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
