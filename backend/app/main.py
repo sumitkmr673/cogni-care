@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from app.api.dashboard import router as dashboard_router
 from app.db.session import engine
 
 app = FastAPI(
     title="SIH2026 Backend",
     version="0.1.0",
 )
+app.include_router(dashboard_router)
 
 
 @app.get("/")

@@ -144,6 +144,27 @@ Database health check:
 http://localhost:8000/health/db
 ```
 
+### Seed caregiver dashboard demo data
+
+After the Compose services are running, seed the repeatable dashboard dataset:
+
+```bash
+docker compose exec backend python -m app.scripts.seed_demo
+```
+
+The seeder creates one clearly labelled demo caregiver and patient, all five
+catalog games, recent sessions/results, ten daily performance records, and
+upcoming reminders. Re-running the command replaces only those demo caregiver
+and patient records; it does not create duplicates or modify the schema.
+
+Use the printed caregiver UUID with the prototype dashboard endpoints:
+
+```text
+GET /patients?demo_caregiver_id=<caregiver-uuid>
+GET /patients/<patient-uuid>/dashboard?demo_caregiver_id=<caregiver-uuid>
+GET /patients/<patient-uuid>/performance?demo_caregiver_id=<caregiver-uuid>
+```
+
 ---
 
 ## 📁 Project Structure
