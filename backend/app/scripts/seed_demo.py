@@ -18,9 +18,12 @@ from app.models.patient_caregiver import PatientCaregiver
 from app.models.performance_metric import PerformanceMetric
 from app.models.reminder import Reminder
 from app.models.user import User
+from app.security import hash_password
 
 DEMO_CAREGIVER_EMAIL = "demo.caregiver@cogni-care.example"
 DEMO_PATIENT_EMAIL = "demo.patient@cogni-care.example"
+DEMO_CAREGIVER_PASSWORD = "DemoCaregiverOnly-2026!"
+DEMO_PATIENT_PASSWORD = "DemoPatientOnly-2026!"
 
 DEMO_CAREGIVER_ID = UUID("d0000000-0000-0000-0000-000000000001")
 DEMO_PATIENT_ID = UUID("d0000000-0000-0000-0000-000000000002")
@@ -94,12 +97,14 @@ def seed_demo_data() -> tuple[UUID, UUID]:
 
         caregiver_user = User(
             email=DEMO_CAREGIVER_EMAIL,
+            password_hash=hash_password(DEMO_CAREGIVER_PASSWORD),
             display_name="Dr. Ananya Mehta (Demo)",
             role="CAREGIVER",
             is_active=True,
         )
         patient_user = User(
             email=DEMO_PATIENT_EMAIL,
+            password_hash=hash_password(DEMO_PATIENT_PASSWORD),
             display_name="Meera Sharma (Demo)",
             role="PATIENT",
             is_active=True,
