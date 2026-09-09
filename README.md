@@ -157,6 +157,15 @@ catalog games, recent sessions/results, ten daily performance records, and
 upcoming reminders. Re-running the command replaces only those demo caregiver
 and patient records; it does not create duplicates or modify the schema.
 
+For local authentication testing only, the seeded demo credentials are:
+
+```text
+demo.caregiver@cogni-care.example / DemoCaregiverOnly-2026!
+demo.patient@cogni-care.example   / DemoPatientOnly-2026!
+```
+
+These are development-only credentials and must not be reused in production.
+
 Use the printed caregiver UUID with the prototype dashboard endpoints:
 
 ```text

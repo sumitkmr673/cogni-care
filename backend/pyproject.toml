@@ -11,6 +11,8 @@ dependencies = [
     "sqlalchemy==2.0.52",
     "psycopg[binary]==3.3.5",
     "alembic==1.19.2",
+    "pwdlib[argon2]==0.3.0",
+    "PyJWT==2.10.1",
 ]
 
 [build-system]
