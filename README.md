@@ -166,13 +166,26 @@ demo.patient@cogni-care.example   / DemoPatientOnly-2026!
 
 These are development-only credentials and must not be reused in production.
 
-Use the printed caregiver UUID with the prototype dashboard endpoints:
+Caregiver dashboard endpoints require a Bearer access token. Authenticate first:
 
 ```text
-GET /patients?demo_caregiver_id=<caregiver-uuid>
-GET /patients/<patient-uuid>/dashboard?demo_caregiver_id=<caregiver-uuid>
-GET /patients/<patient-uuid>/performance?demo_caregiver_id=<caregiver-uuid>
+POST /auth/login
 ```
+
+Then call the dashboard APIs with the authenticated caregiver identity from the JWT.
+Do not send a client-supplied caregiver ID; `demo_caregiver_id` is no longer used
+for authorization.
+
+```text
+Authorization: Bearer <access_token>
+
+GET /patients
+GET /patients/<patient-uuid>/dashboard
+GET /patients/<patient-uuid>/performance
+```
+
+Only users with the `CAREGIVER` role may access these endpoints. Patients linked
+through `patient_caregivers` are returned; unrelated patients return HTTP 404.
 
 ---
 

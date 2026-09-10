@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db
+from app.api.dependencies import get_current_user, get_db
 from app.models.caregiver import Caregiver
 from app.models.game import Game
 from app.models.game_result import GameResult
@@ -29,23 +29,41 @@ from app.schemas.dashboard import (
 
 router = APIRouter(tags=["caregiver dashboard"])
 
-DEMO_ACCESS_DESCRIPTION = (
-    "Prototype-only access: provide the caregiver UUID in demo_caregiver_id. "
-    "This parameter will be replaced by authenticated caregiver identity later."
+CAREGIVER_ACCESS_DESCRIPTION = (
+    "Requires a Bearer access token for an authenticated caregiver. "
+    "Caregiver identity is taken from the JWT, not from a client-supplied caregiver ID."
 )
+
+
+def get_current_caregiver(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Caregiver:
+    if current_user.role != "CAREGIVER":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Caregiver access required",
+        )
+    caregiver = db.scalar(select(Caregiver).where(Caregiver.user_id == current_user.id))
+    if caregiver is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Caregiver access required",
+        )
+    return caregiver
 
 
 def _accessible_patient(
     db: Session,
     patient_id: UUID,
-    demo_caregiver_id: UUID,
+    caregiver_id: UUID,
 ) -> Patient:
     patient = db.scalar(
         select(Patient)
         .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
         .where(
             Patient.id == patient_id,
-            PatientCaregiver.caregiver_id == demo_caregiver_id,
+            PatientCaregiver.caregiver_id == caregiver_id,
         )
     )
     if patient is None:
@@ -59,18 +77,18 @@ def _accessible_patient(
 @router.get(
     "/patients",
     response_model=PatientsResponse,
-    summary="List patients available to the demo caregiver",
-    description=DEMO_ACCESS_DESCRIPTION,
+    summary="List patients available to the authenticated caregiver",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
 )
 def list_patients(
-    demo_caregiver_id: UUID = Query(description=DEMO_ACCESS_DESCRIPTION),
+    caregiver: Caregiver = Depends(get_current_caregiver),
     db: Session = Depends(get_db),
 ) -> PatientsResponse:
     rows = db.execute(
         select(Patient, User.display_name)
         .join(User, User.id == Patient.user_id)
         .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
-        .where(PatientCaregiver.caregiver_id == demo_caregiver_id)
+        .where(PatientCaregiver.caregiver_id == caregiver.id)
         .order_by(User.display_name, Patient.id)
     ).all()
 
@@ -92,14 +110,14 @@ def list_patients(
     "/patients/{patient_id}/dashboard",
     response_model=DashboardResponse,
     summary="Get caregiver dashboard data for one patient",
-    description=DEMO_ACCESS_DESCRIPTION,
+    description=CAREGIVER_ACCESS_DESCRIPTION,
 )
 def get_patient_dashboard(
     patient_id: UUID,
-    demo_caregiver_id: UUID = Query(description=DEMO_ACCESS_DESCRIPTION),
+    caregiver: Caregiver = Depends(get_current_caregiver),
     db: Session = Depends(get_db),
 ) -> DashboardResponse:
-    patient = _accessible_patient(db, patient_id, demo_caregiver_id)
+    patient = _accessible_patient(db, patient_id, caregiver.id)
     display_name = db.scalar(select(User.display_name).where(User.id == patient.user_id))
 
     relationship_row = db.execute(
@@ -108,7 +126,7 @@ def get_patient_dashboard(
         .join(User, User.id == Caregiver.user_id)
         .where(
             PatientCaregiver.patient_id == patient_id,
-            PatientCaregiver.caregiver_id == demo_caregiver_id,
+            PatientCaregiver.caregiver_id == caregiver.id,
         )
     ).one_or_none()
 
@@ -208,14 +226,14 @@ def get_patient_dashboard(
     "/patients/{patient_id}/performance",
     response_model=PerformanceHistoryResponse,
     summary="Get daily performance history for a patient",
-    description=DEMO_ACCESS_DESCRIPTION,
+    description=CAREGIVER_ACCESS_DESCRIPTION,
 )
 def get_patient_performance(
     patient_id: UUID,
-    demo_caregiver_id: UUID = Query(description=DEMO_ACCESS_DESCRIPTION),
+    caregiver: Caregiver = Depends(get_current_caregiver),
     db: Session = Depends(get_db),
 ) -> PerformanceHistoryResponse:
-    _accessible_patient(db, patient_id, demo_caregiver_id)
+    _accessible_patient(db, patient_id, caregiver.id)
     metrics = db.scalars(
         select(PerformanceMetric)
         .where(PerformanceMetric.patient_id == patient_id)
