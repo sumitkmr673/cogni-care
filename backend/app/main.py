@@ -3,6 +3,7 @@ from sqlalchemy import text
 
 from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
+from app.api.gameplay import router as gameplay_router
 from app.db.session import engine
 
 app = FastAPI(
@@ -11,6 +12,7 @@ app = FastAPI(
 )
 app.include_router(dashboard_router)
 app.include_router(auth_router)
+app.include_router(gameplay_router)
 
 
 @app.get("/")

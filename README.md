@@ -187,6 +187,21 @@ GET /patients/<patient-uuid>/performance
 Only users with the `CAREGIVER` role may access these endpoints. Patients linked
 through `patient_caregivers` are returned; unrelated patients return HTTP 404.
 
+Authenticated patients can start gameplay sessions with the same Bearer token.
+Patient identity is taken from the JWT, not from a client-supplied patient ID.
+
+```text
+Authorization: Bearer <access_token>
+
+GET /games
+POST /games/<game-uuid>/sessions
+POST /games/sessions/<session-uuid>/result
+```
+
+`GET /games` requires any authenticated user. Starting a session and submitting a
+result require the `PATIENT` role. A patient may only submit results for their own
+sessions; other patients' sessions return HTTP 404.
+
 ---
 
 ## 📁 Project Structure
