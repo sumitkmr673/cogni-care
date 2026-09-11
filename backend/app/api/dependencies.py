@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.models.user import User
+from app.models.caregiver import Caregiver
+from app.models.patient import Patient
+from app.models.patient_caregiver import PatientCaregiver
 from app.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -48,3 +51,45 @@ def get_current_user(
     if user is None or not user.is_active:
         raise unauthorized
     return user
+
+
+def get_current_caregiver(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Caregiver:
+    if current_user.role != "CAREGIVER":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Caregiver access required",
+        )
+
+    caregiver = db.scalar(
+        select(Caregiver).where(Caregiver.user_id == current_user.id)
+    )
+    if caregiver is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Caregiver profile not found",
+        )
+    return caregiver
+
+
+def get_accessible_patient(
+    patient_id: UUID,
+    caregiver: Caregiver,
+    db: Session,
+) -> Patient:
+    patient = db.scalar(
+        select(Patient)
+        .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
+        .where(
+            Patient.id == patient_id,
+            PatientCaregiver.caregiver_id == caregiver.id,
+        )
+    )
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+    return patient

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -244,3 +244,128 @@ def get_patient_performance(
         patient_id=patient_id,
         metrics=[PerformancePoint.model_validate(metric) for metric in metrics],
     )
+
+
+def _session_response(
+    session: GameSession,
+    game: Game,
+    result: GameResult | None,
+) -> RecentGameSession:
+    return RecentGameSession(
+        id=session.id,
+        game_id=game.id,
+        game_code=game.code,
+        game_name=game.name,
+        started_at=session.started_at,
+        completed_at=session.completed_at,
+        status=session.status,
+        difficulty_level=session.difficulty_level,
+        result=(
+            SessionResult(
+                score=result.score,
+                accuracy=result.accuracy,
+                correct_answers=result.correct_answers,
+                total_questions=result.total_questions,
+                response_time_ms=result.response_time_ms,
+                mistakes=result.mistakes,
+            )
+            if result is not None
+            else None
+        ),
+    )
+
+
+@router.get(
+    "/patients/{patient_id}/sessions",
+    response_model=list[RecentGameSession],
+    summary="List a patient's game-session history",
+)
+def get_patient_sessions(
+    patient_id: UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> list[RecentGameSession]:
+    _accessible_patient(db, patient_id, caregiver.id)
+    rows = db.execute(
+        select(GameSession, Game, GameResult)
+        .join(Game, Game.id == GameSession.game_id)
+        .outerjoin(GameResult, GameResult.session_id == GameSession.id)
+        .where(GameSession.patient_id == patient_id)
+        .order_by(GameSession.started_at.desc())
+        .limit(limit)
+    ).all()
+    return [_session_response(session, game, result) for session, game, result in rows]
+
+
+@router.get(
+    "/patients/{patient_id}/trends",
+    response_model=PerformanceHistoryResponse,
+    summary="List a patient's performance trend history",
+)
+def get_patient_trends(
+    patient_id: UUID,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> PerformanceHistoryResponse:
+    _accessible_patient(db, patient_id, caregiver.id)
+    metrics = db.scalars(
+        select(PerformanceMetric)
+        .where(PerformanceMetric.patient_id == patient_id)
+        .order_by(PerformanceMetric.metric_date.asc())
+    ).all()
+    return PerformanceHistoryResponse(
+        patient_id=patient_id,
+        metrics=[PerformancePoint.model_validate(metric) for metric in metrics],
+    )
+
+
+@router.get(
+    "/patients/{patient_id}/reminders",
+    response_model=list[ReminderItem],
+    summary="List a patient's reminders",
+)
+def get_patient_reminders(
+    patient_id: UUID,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> list[ReminderItem]:
+    _accessible_patient(db, patient_id, caregiver.id)
+    reminders = db.scalars(
+        select(Reminder)
+        .where(Reminder.patient_id == patient_id)
+        .order_by(Reminder.scheduled_at.asc())
+    ).all()
+    return [_reminder_response(reminder) for reminder in reminders]
+
+
+def _reminder_response(reminder: Reminder) -> ReminderItem:
+    return ReminderItem(
+        id=reminder.id,
+        title=reminder.title,
+        description=reminder.description,
+        reminder_type=reminder.reminder_type,
+        scheduled_at=reminder.scheduled_at,
+        is_recurring=reminder.is_recurring,
+        recurrence_rule=reminder.recurrence_rule,
+    )
+
+
+@router.post(
+    "/patients/{patient_id}/reminders",
+    response_model=ReminderItem,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a reminder for an assigned patient",
+)
+def create_patient_reminder(
+    patient_id: UUID,
+    reminder_data: ReminderCreateRequest,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> ReminderItem:
+    _accessible_patient(db, patient_id, caregiver.id)
+    reminder = Reminder(patient_id=patient_id, **reminder_data.model_dump())
+    db.add(reminder)
+    db.commit()
+    db.refresh(reminder)
+    return _reminder_response(reminder)
