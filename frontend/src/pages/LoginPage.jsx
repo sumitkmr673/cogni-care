@@ -22,7 +22,7 @@ export default function LoginPage({ authenticated, onSignIn }) {
       await onSignIn(email.trim(), password);
       navigate(location.state?.from?.pathname || "/app", { replace: true });
     } catch (requestError) {
-      setError(requestError.message);
+      setError(requestError.status === 401 ? "Email or password is incorrect." : "Unable to sign in right now. Please try again.");
     } finally {
       setLoading(false);
     }

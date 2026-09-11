@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { clearToken } from "../../api";
 import { Icon } from "../Icons";
 
@@ -11,9 +11,10 @@ const sections = [
 ];
 
 export default function Sidebar({ patientId, caregiver, onSignOut }) {
+  const location = useLocation();
   const resolvedSections = sections.map(([label, path, icon]) => [
     label,
-    path.replace("/current", patientId ? `/${patientId}` : "/current"),
+    patientId ? path.replace("/current", `/${patientId}`) : label === "Overview" || label === "Patients" ? path : "/app/patients",
     icon,
   ]);
 
@@ -28,7 +29,15 @@ export default function Sidebar({ patientId, caregiver, onSignOut }) {
       <nav className="sidebar-nav" aria-label="Caregiver navigation">
         <span className="sidebar-label">Caregiver portal</span>
         {resolvedSections.map(([label, path, icon]) => (
-          <NavLink key={label} to={path} end={label === "Overview"} className={({ isActive }) => isActive ? "active" : ""}>
+          <NavLink key={label} to={path} className={() => {
+            const currentPath = location.pathname;
+            const isActive = label === "Overview"
+              ? currentPath === "/app"
+              : label === "Patients"
+                ? currentPath === "/app/patients" || /^\/app\/patients\/[^/]+$/.test(currentPath)
+                : currentPath.endsWith(`/${label === "Game Activity" ? "activity" : label.toLowerCase()}`);
+            return isActive ? "active" : "";
+          }}>
             <Icon name={icon} size={17} />{label}
           </NavLink>
         ))}
