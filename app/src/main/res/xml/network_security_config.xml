@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- TLS only. A debug-only exception for a local backend gets added with the sync layer. -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

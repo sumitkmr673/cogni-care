@@ -1,0 +1,46 @@
+package com.example.cognicare.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+// Shared prototype palette (apps/patient-kiosk and apps/doctor-dashboard styles.css)
+val Teal600 = Color(0xFF157C70)
+val Teal700 = Color(0xFF0D655B)
+val Teal800 = Color(0xFF125E55)
+val Ink900 = Color(0xFF1E3C3D)
+val Ink500 = Color(0xFF5F7571)
+val Sage50 = Color(0xFFF6FAF8)
+val Sage100 = Color(0xFFF3F7F6)
+val Mint100 = Color(0xFFE3F3EC)
+val Mint50 = Color(0xFFEAF7F1)
+val Border = Color(0xFFD8E8E2)
+val Divider = Color(0xFFE4EEEA)
+val Track = Color(0xFFDCE9E4)
+val Glow = Color(0xFFDFEEE8)
+val Leaf500 = Color(0xFF4EAE83)
+val Leaf100 = Color(0xFFD9F0E5)
+val Amber700 = Color(0xFF8A6A33)
+val Amber500 = Color(0xFFCF9D3E)
+val Amber50 = Color(0xFFFFFAF0)
+val AmberBorder = Color(0xFFE6D9B7)
+val Rose600 = Color(0xFFB0483C)
+val Rose50 = Color(0xFFFFF0ED)
+val SafetyText = Color(0xFF2F6B55)
+val SafetyContainer = Color(0xFFEFF9F4)
+val SafetyBorder = Color(0xFFCFE8DC)
+val NoteContainer = Color(0xFFF0F6F3)
+
+// Cogni-Care dashboard accents
+val Clay500 = Color(0xFFD9814E)
+val Clay700 = Color(0xFFB35F2E)
+val Clay100 = Color(0xFFFBE8DA)
+val Sand200 = Color(0xFFF5D6B0)
+val Sand800 = Color(0xFF8E5427)
+val Lavender500 = Color(0xFF8C77BD)
+val Lavender100 = Color(0xFFEDE8F7)
+val Slate500 = Color(0xFF6479AE)
+val Slate100 = Color(0xFFE6EBF6)
+
+// Patient high-contrast adjustments
+val PatientInkMuted = Color(0xFF3F5A57)
+val PatientCardBorder = Color(0xFFBCD2CA)
+val PatientAccentText = Color(0xFF9C4412)

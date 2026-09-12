@@ -1,0 +1,268 @@
+<resources>
+    <string name="app_name">CogniCare</string>
+
+    <!-- Brand & shared chrome -->
+    <string name="brand_tagline_patient">Memory care</string>
+    <string name="brand_tagline_caregiver">Caregiver support</string>
+    <string name="footer_help">Need help? Ask your doctor or a family member.</string>
+    <string name="footer_privacy">Privacy-first demo · synthetic data only</string>
+    <string name="demo_badge">Synthetic demonstration data</string>
+
+    <!-- Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_go_back">Go back</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_details">Details</string>
+    <string name="action_see_all">See all</string>
+    <string name="action_view_performance">View full performance</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_sign_out">Sign out</string>
+    <string name="action_close">Close</string>
+    <string name="action_open_reports">Open detailed reports</string>
+    <string name="action_use_demo">Use demo</string>
+
+    <!-- Accessibility -->
+    <string name="cd_selected">Selected</string>
+    <string name="cd_open_alerts">Open alerts</string>
+    <string name="cd_open_settings">open settings</string>
+    <string name="cd_change_patient">Change patient</string>
+    <string name="cd_step_progress">Step %1$d of %2$d: %3$s</string>
+    <string name="cd_pin_progress">%1$d of %2$d PIN digits entered</string>
+    <string name="cd_delete_digit">Delete last digit</string>
+    <string name="cd_show_password">Show password</string>
+    <string name="cd_hide_password">Hide password</string>
+    <string name="cd_trend_chart">Memory went from %1$d to %2$d and attention from %3$d to %4$d over this period.</string>
+
+    <!-- Greetings -->
+    <string name="greeting_morning">Good morning,</string>
+    <string name="greeting_afternoon">Good afternoon,</string>
+    <string name="greeting_evening">Good evening,</string>
+
+    <!-- Onboarding steps -->
+    <string name="step_language">Language</string>
+    <string name="step_consent">Consent</string>
+    <string name="step_identify">Identify</string>
+    <string name="step_sign_in">Sign in</string>
+    <string name="step_eyebrow">Step %1$d of %2$d · %3$s</string>
+
+    <!-- Welcome -->
+    <string name="welcome_eyebrow">Memory care at home</string>
+    <string name="welcome_mode">AI-assisted cognitive games</string>
+    <string name="welcome_title">Everyday games to</string>
+    <string name="welcome_emphasis">keep your mind active.</string>
+    <string name="welcome_body">CogniCare offers gentle memory games and daily reminders. Your doctor sees how you are doing and can support your care.</string>
+    <string name="welcome_start">Get started</string>
+    <string name="welcome_demo_patient">Start with demo patient</string>
+    <string name="welcome_demo_caregiver">Open demo caregiver dashboard</string>
+    <string name="welcome_demo_loading">Opening the demo…</string>
+    <string name="welcome_note_voice">Voice &amp; touch</string>
+    <string name="welcome_note_voice_sub">In your language</string>
+    <string name="welcome_note_review">Doctor reviewed</string>
+    <string name="welcome_note_review_sub">Insights, never a diagnosis</string>
+
+    <!-- Language -->
+    <string name="language_title">Choose your language</string>
+    <string name="language_lead">Select the language you are most comfortable using.</string>
+    <string name="language_selected">Selected: %1$s</string>
+
+    <!-- Consent -->
+    <string name="consent_step">Your privacy matters</string>
+    <string name="consent_title">Before we begin</string>
+    <string name="consent_lead">Please read how CogniCare uses the information from your games and reminders.</string>
+    <string name="consent_activity_title">Game activity</string>
+    <string name="consent_activity_body">CogniCare records how you play memory games and which daily reminders you complete.</string>
+    <string name="consent_insights_title">Insights for your doctor</string>
+    <string name="consent_insights_body">Your doctor sees progress trends to support your care. These are insights, not a medical diagnosis.</string>
+    <string name="consent_control_title">Your control</string>
+    <string name="consent_control_body">Information stays on this device until it can sync over a secure connection. You or your family can ask to stop at any time.</string>
+    <string name="consent_agree_text">I understand and agree to continue.</string>
+    <string name="consent_agree">I agree</string>
+
+    <!-- Identify (role selection) -->
+    <string name="identify_step">Who is using CogniCare</string>
+    <string name="identify_title">Who is using CogniCare today?</string>
+    <string name="identify_lead">Choose one option to continue.</string>
+    <string name="identify_patient_title">I am a Patient</string>
+    <string name="identify_patient_body">Play memory games and see today\'s reminders</string>
+    <string name="identify_caregiver_title">I am a Caregiver</string>
+    <string name="identify_caregiver_body">For the doctor who looks after the patient</string>
+    <string name="identify_demo_note">Demo only: Meera Sharma · synthetic patient profile</string>
+
+    <!-- Patient sign in -->
+    <string name="patient_login_title">Welcome back</string>
+    <string name="patient_login_lead">Enter your %1$d-digit PIN.</string>
+    <string name="patient_login_error">That PIN did not match. Let\'s try again.</string>
+    <string name="patient_login_help">Forgot your PIN? Ask your doctor or family.</string>
+    <string name="patient_login_demo_note">Demo PIN: %1$s</string>
+
+    <!-- Caregiver sign in -->
+    <string name="caregiver_login_title">Sign in as caregiver</string>
+    <string name="caregiver_login_subtitle">For the doctor who looks after the patient. Follow game activity, reminders and care insights.</string>
+    <string name="label_email">Email</string>
+    <string name="label_password">Password</string>
+    <string name="error_invalid_email">Enter a valid email address.</string>
+    <string name="error_invalid_credentials">Email or password is incorrect.</string>
+    <string name="caregiver_login_demo_title">Demo caregiver</string>
+    <string name="caregiver_login_demo_body">%1$s · password %2$s</string>
+    <string name="caregiver_login_safety_title">Human review stays in charge</string>
+    <string name="caregiver_login_safety_body">CogniCare shows indicators from game activity. Clinical decisions remain with you.</string>
+
+    <!-- Safety -->
+    <string name="safety_title">AI-assisted insights · review required</string>
+    <string name="safety_body">Indicators come from game activity and are not a medical diagnosis. Confirm any concern clinically.</string>
+    <string name="safety_tag">DEMO</string>
+    <string name="safety_tag_draft">DRAFT</string>
+
+    <!-- Patient home -->
+    <string name="patient_home_lead">Here is your plan for today.</string>
+    <string name="patient_home_play_title">Play today\'s game</string>
+    <string name="patient_home_play_body">Gentle exercises for memory and attention</string>
+    <string name="patient_home_today">Today\'s activities</string>
+    <string name="patient_home_progress">%1$d of %2$d done</string>
+    <string name="patient_home_empty">Nothing else is planned for today. Enjoy your day!</string>
+    <string name="patient_reminder_mark_done">Mark as done</string>
+    <string name="patient_reminder_done">Done · tap to undo</string>
+    <string name="patient_switch_user">Not %1$s? Switch user</string>
+
+    <!-- Games -->
+    <string name="games_eyebrow">Memory games</string>
+    <string name="games_title">Choose a game</string>
+    <string name="games_lead">Take your time. There is no rush.</string>
+    <string name="game_memory_match">Memory Match</string>
+    <string name="game_memory_match_desc">Find the matching picture pairs</string>
+    <string name="game_pattern_recall">Pattern Recall</string>
+    <string name="game_pattern_recall_desc">Remember the order of the colours</string>
+    <string name="game_object_naming">Object Naming</string>
+    <string name="game_object_naming_desc">Say or pick the name of the picture</string>
+    <string name="game_daily_recall">Daily Recall</string>
+    <string name="game_daily_recall_desc">Talk about your day</string>
+    <string name="game_orientation">Orientation</string>
+    <string name="game_orientation_desc">What day is it? Where are we?</string>
+    <string name="game_family_identification">Family Identification</string>
+    <string name="game_family_identification_desc">Recognise the faces of loved ones</string>
+    <string name="game_placeholder_eyebrow">Coming soon</string>
+    <string name="game_placeholder_body">This game is almost ready. Please try another game for now.</string>
+    <string name="game_back_to_games">Back to games</string>
+    <string name="game_complete_title">Great job today!</string>
+    <string name="game_complete_body">You finished the game. Your doctor will see how you are doing.</string>
+
+    <!-- Memory Match -->
+    <string name="memory_match_title">Find the matching pairs</string>
+    <string name="memory_match_lead">Tap two cards to see if they match.</string>
+    <string name="memory_match_pairs_found">%1$d of %2$d pairs found</string>
+    <string name="cd_face_down_card">Face-down card</string>
+
+    <!-- Pattern Recall -->
+    <string name="pattern_recall_title">Repeat the pattern</string>
+    <string name="pattern_recall_lead">Watch the colours light up, then tap them back in the same order.</string>
+    <string name="pattern_recall_round">Round %1$d of %2$d</string>
+    <string name="pattern_recall_watch">Watch closely</string>
+    <string name="pattern_recall_your_turn">Your turn</string>
+    <string name="pattern_recall_try_again">Not quite — watch again</string>
+    <string name="color_red">Red</string>
+    <string name="color_green">Green</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_yellow">Yellow</string>
+
+    <!-- Caregiver overview -->
+    <string name="overview_eyebrow">Caregiver overview</string>
+    <string name="dashboard_tagline">Clear, compassionate insights from cognitive game activity.</string>
+    <string name="label_patient">Patient</string>
+    <string name="snapshot_eyebrow">Patient snapshot</string>
+    <string name="snapshot_meta">%1$s · %2$s · Game activity overview</string>
+    <string name="sync_synced_today">Activity synced today</string>
+    <string name="sync_waiting">Waiting to sync</string>
+    <string name="stat_games_completed">Games completed</string>
+    <string name="stat_average_accuracy">Average accuracy</string>
+    <string name="stat_memory_score">Memory score</string>
+    <string name="stat_attention_score">Attention score</string>
+    <string name="stat_game_accuracy">Game accuracy</string>
+    <string name="stat_response_time">Avg. response time</string>
+    <string name="unit_today">today</string>
+    <string name="unit_percent" formatted="false">%</string>
+    <string name="unit_out_of_100">/100</string>
+    <string name="unit_seconds">s</string>
+    <string name="percent_value">%1$d%%</string>
+    <string name="overview_trend_eyebrow">Cognitive game performance</string>
+    <string name="trend_title">Performance trend</string>
+    <string name="domain_memory">Memory</string>
+    <string name="domain_attention">Attention</string>
+    <string name="trend_range">%1$d–%2$d points</string>
+    <string name="trend_not_enough">Not enough game activity yet to show a trend.</string>
+    <string name="reminders_eyebrow">Stay on track</string>
+    <string name="reminders_title">Upcoming reminders</string>
+    <string name="reminders_empty">No upcoming reminders.</string>
+    <string name="recent_eyebrow">Recent activity</string>
+    <string name="recent_title">Latest game sessions</string>
+    <string name="recent_empty">No game sessions yet.</string>
+    <string name="sync_status_pending">Waiting to sync</string>
+    <string name="sync_status_synced">Synced</string>
+    <string name="sync_status_failed">Sync failed</string>
+    <string name="no_patients_title">No patients linked yet</string>
+    <string name="no_patients_body">Link a patient to start seeing their game activity and reminders.</string>
+
+    <!-- Performance -->
+    <string name="performance_eyebrow">Patient performance</string>
+    <string name="performance_title">Cognitive game performance</string>
+    <string name="performance_profile_meta">Patient profile · %1$s</string>
+    <string name="performance_indicator_note">Performance indicators are based on game activity, not a medical diagnosis.</string>
+    <string name="performance_history_eyebrow">Daily history</string>
+    <string name="breakdown_eyebrow">Across all activities</string>
+    <string name="breakdown_title">Game-by-game performance</string>
+    <string name="breakdown_row_meta">%1$d completed · Latest level %2$d</string>
+    <string name="breakdown_empty">No games played yet.</string>
+
+    <!-- Caregiver navigation -->
+    <string name="nav_overview">Overview</string>
+    <string name="nav_performance">Performance</string>
+    <string name="nav_alerts">Alerts</string>
+    <string name="nav_suggestions">Care tips</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Alerts -->
+    <string name="alerts_eyebrow">Stay informed</string>
+    <string name="alerts_title">Alerts &amp; notifications</string>
+    <string name="alerts_subtitle">Missed activities and notable changes appear here.</string>
+    <string name="alerts_planned_title">Alert feed comes with sync</string>
+    <string name="alerts_planned_body">Missed-activity and performance-change alerts will appear once game results sync from the patient\'s device.</string>
+
+    <!-- Care suggestions -->
+    <string name="suggestions_eyebrow">Personalised care</string>
+    <string name="suggestions_title">Care suggestions</string>
+    <string name="suggestions_subtitle">Ideas to support daily routines, generated from game activity.</string>
+    <string name="suggestions_safety_title">AI-generated suggestions · doctor review required</string>
+    <string name="suggestions_safety_body">Suggestions stay marked unreviewed until you check them. Unreviewed suggestions are never shown to the patient.</string>
+    <string name="suggestions_review_title">Review before sharing</string>
+    <string name="suggestions_review_body">You will be able to approve, edit or reject each suggestion, with a record of who reviewed it and when.</string>
+    <string name="suggestions_planned_title">Suggestions are on the way</string>
+    <string name="suggestions_planned_body">Rule-based suggestions arrive first, followed by insights from the AI service once game results sync.</string>
+
+    <!-- Reports -->
+    <string name="reports_eyebrow">Reports &amp; analytics</string>
+    <string name="reports_title">Detailed reports</string>
+    <string name="reports_subtitle">Look back over game activity in more detail.</string>
+    <string name="reports_planned_title">Filter and export</string>
+    <string name="reports_planned_body">Filter by date range, game and cognitive domain, then export a report for the care record.</string>
+
+    <!-- Patients -->
+    <string name="patients_eyebrow">Patient management</string>
+    <string name="patients_title">Your patients</string>
+    <string name="patients_subtitle">Choose whose activity you want to see.</string>
+    <string name="patients_meta">%1$s · %2$s</string>
+    <string name="patients_add_title">Add a patient</string>
+    <string name="patients_add_body">Linking a new patient requires informed consent from the patient or their guardian.</string>
+
+    <!-- Settings -->
+    <string name="settings_eyebrow">Preferences</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_notifications_title">Notification preferences</string>
+    <string name="settings_notifications_body">Choose which alerts reach you and when. Available once alerts are connected.</string>
+    <string name="settings_privacy_title">Privacy &amp; data</string>
+    <string name="settings_privacy_body">Patient information is kept on the device until it syncs over a secure connection. CogniCare shows insights from game activity only and never makes a diagnosis.</string>
+
+    <!-- Roles -->
+    <string name="role_patient">Patient</string>
+    <string name="role_doctor_caregiver">Doctor · Caregiver</string>
+    <string name="doctor_name_format">Dr. %1$s</string>
+</resources>
