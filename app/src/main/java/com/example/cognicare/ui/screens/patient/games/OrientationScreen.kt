@@ -6,20 +6,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
-import com.example.cognicare.viewmodel.ObjectNamingViewModel
+import com.example.cognicare.viewmodel.OrientationViewModel
 
 @Composable
-fun ObjectNamingScreen(
+fun OrientationScreen(
     languageLabel: String,
     onBack: () -> Unit,
     onComplete: () -> Unit,
-    viewModel: ObjectNamingViewModel = hiltViewModel()
+    viewModel: OrientationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     VoiceQuizScreen(
         languageLabel = languageLabel,
-        eyebrow = stringResource(R.string.game_object_naming),
-        title = stringResource(R.string.object_naming_title),
+        eyebrow = stringResource(R.string.game_orientation),
+        title = stringResource(R.string.orientation_title),
         state = state,
         onSpeechResult = viewModel::onSpeechResult,
         onOptionSelected = viewModel::onOptionSelected,

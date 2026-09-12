@@ -1,7 +1,9 @@
 package com.example.cognicare.data.demo
 
+import com.example.cognicare.R
 import com.example.cognicare.core.time.startOfDay
 import com.example.cognicare.data.model.DailyScorePoint
+import com.example.cognicare.data.model.FamilyMember
 import com.example.cognicare.data.model.GamePerformance
 import com.example.cognicare.data.model.GameSession
 import com.example.cognicare.data.model.GameType
@@ -31,6 +33,37 @@ object DemoData {
     )
 
     val patients: List<PatientProfile> = listOf(meera)
+
+    // Face boxes are measured in pixels on the 612x408 stock photo (res/drawable/family_photo.jpg).
+    private const val PHOTO_WIDTH = 612f
+    private const val PHOTO_HEIGHT = 408f
+
+    private fun familyMember(
+        name: String,
+        relation: String,
+        left: Int,
+        top: Int,
+        size: Int,
+        isPatient: Boolean = false
+    ) = FamilyMember(
+        name = name,
+        relation = relation,
+        photoRes = R.drawable.family_photo,
+        faceLeft = left / PHOTO_WIDTH,
+        faceTop = top / PHOTO_HEIGHT,
+        faceSize = size / PHOTO_WIDTH,
+        isPatient = isPatient
+    )
+
+    /** Meera's family, left to right in the photo. Meera herself is the woman in the white sweater. */
+    val familyMembers: List<FamilyMember> = listOf(
+        familyMember("Arjun", "grandson", left = 25, top = 120, size = 105),
+        familyMember("Rohan", "son", left = 140, top = 68, size = 92),
+        familyMember("Aditi", "granddaughter", left = 207, top = 94, size = 66),
+        familyMember("Priya", "daughter-in-law", left = 272, top = 108, size = 80),
+        familyMember("Meera", "self", left = 356, top = 138, size = 76, isPatient = true),
+        familyMember("Vikram", "husband", left = 430, top = 105, size = 95)
+    )
 
     fun reminders(now: Long = System.currentTimeMillis()): List<Reminder> {
         val today = startOfDay(now)

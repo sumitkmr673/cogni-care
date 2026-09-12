@@ -3,113 +3,190 @@ package com.example.cognicare.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.random.Random
 
 enum class PatternColor { RED, GREEN, BLUE, YELLOW }
 
-enum class PatternPhase { SHOWING, INPUT, MISTAKE }
+enum class PatternPhase {
+    /** The sequence is playing; the board is locked. */
+    SHOWING,
+
+    /** The patient's turn. The only phase that accepts taps. */
+    INPUT,
+
+    /** Brief pause after a correct round; the board is locked. */
+    ROUND_COMPLETE,
+
+    /** Brief pause after a wrong tap before the same round replays; the board is locked. */
+    MISTAKE,
+
+    COMPLETE
+}
+
+enum class TapOutcome { IGNORED, CORRECT, ROUND_COMPLETE, MISTAKE, GAME_COMPLETE }
 
 data class PatternRecallUiState(
     val sequence: List<PatternColor> = emptyList(),
     val playerInput: List<PatternColor> = emptyList(),
     val phase: PatternPhase = PatternPhase.SHOWING,
-    val highlightedIndex: Int = -1,
-    val round: Int = 1
+    val highlightedColor: PatternColor? = null,
+    val round: Int = 1,
+    val mistakesThisRound: Int = 0,
+    val roundsCompleted: Int = 0
 ) {
-    val isSolved: Boolean get() = round > WIN_ROUND
+    val isComplete: Boolean get() = phase == PatternPhase.COMPLETE
 
     companion object {
         const val WIN_ROUND = 5
+
+        /** Ending gently after repeated misses avoids an endless, discouraging retry loop. */
+        const val MAX_MISTAKES_PER_ROUND = 3
     }
 }
 
-/** Simon-says: the sequence grows by one colour each round; five rounds completes the game. */
+/**
+ * Simon-says rules with no timing or Android dependencies, so every transition is testable.
+ * Taps outside [PatternPhase.INPUT] are ignored, which is what keeps stray taps during
+ * playback or pauses from corrupting a round.
+ */
+class PatternRecallEngine(private val random: Random = Random.Default) {
+
+    var state: PatternRecallUiState = PatternRecallUiState()
+        private set
+
+    fun startGame(): PatternRecallUiState {
+        state = PatternRecallUiState(sequence = listOf(randomColor()))
+        return state
+    }
+
+    fun highlight(color: PatternColor?) {
+        if (state.phase == PatternPhase.SHOWING) state = state.copy(highlightedColor = color)
+    }
+
+    fun beginInput() {
+        if (state.phase == PatternPhase.SHOWING) {
+            state = state.copy(phase = PatternPhase.INPUT, playerInput = emptyList(), highlightedColor = null)
+        }
+    }
+
+    fun tap(color: PatternColor): TapOutcome {
+        val current = state
+        if (current.phase != PatternPhase.INPUT) return TapOutcome.IGNORED
+
+        if (current.sequence.getOrNull(current.playerInput.size) != color) {
+            val mistakes = current.mistakesThisRound + 1
+            return if (mistakes >= PatternRecallUiState.MAX_MISTAKES_PER_ROUND) {
+                state = current.copy(phase = PatternPhase.COMPLETE, playerInput = emptyList(), mistakesThisRound = mistakes)
+                TapOutcome.GAME_COMPLETE
+            } else {
+                state = current.copy(phase = PatternPhase.MISTAKE, playerInput = emptyList(), mistakesThisRound = mistakes)
+                TapOutcome.MISTAKE
+            }
+        }
+
+        val input = current.playerInput + color
+        if (input.size < current.sequence.size) {
+            state = current.copy(playerInput = input)
+            return TapOutcome.CORRECT
+        }
+
+        val roundsCompleted = current.roundsCompleted + 1
+        return if (current.round >= PatternRecallUiState.WIN_ROUND) {
+            state = current.copy(playerInput = input, phase = PatternPhase.COMPLETE, roundsCompleted = roundsCompleted)
+            TapOutcome.GAME_COMPLETE
+        } else {
+            state = current.copy(playerInput = input, phase = PatternPhase.ROUND_COMPLETE, roundsCompleted = roundsCompleted)
+            TapOutcome.ROUND_COMPLETE
+        }
+    }
+
+    fun nextRound() {
+        val current = state
+        if (current.phase != PatternPhase.ROUND_COMPLETE) return
+        state = current.copy(
+            round = current.round + 1,
+            sequence = current.sequence + randomColor(),
+            playerInput = emptyList(),
+            phase = PatternPhase.SHOWING,
+            mistakesThisRound = 0
+        )
+    }
+
+    fun replayRound() {
+        if (state.phase == PatternPhase.MISTAKE) {
+            state = state.copy(phase = PatternPhase.SHOWING, playerInput = emptyList())
+        }
+    }
+
+    private fun randomColor(): PatternColor = PatternColor.entries[random.nextInt(PatternColor.entries.size)]
+}
+
 @HiltViewModel
 class PatternRecallViewModel @Inject constructor() : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PatternRecallUiState())
+    private val engine = PatternRecallEngine()
+
+    private val _uiState = MutableStateFlow(engine.startGame())
     val uiState: StateFlow<PatternRecallUiState> = _uiState.asStateFlow()
 
+    /** The single playback/pause job; replaced (never duplicated) whenever a new one starts. */
+    private var sequenceJob: Job? = null
+
     init {
-        startRound(sequence = listOf(randomColor()))
-    }
-
-    private fun startRound(sequence: List<PatternColor>) {
-        _uiState.value = _uiState.value.copy(
-            sequence = sequence,
-            playerInput = emptyList(),
-            phase = PatternPhase.SHOWING,
-            highlightedIndex = -1
-        )
-        playbackSequence(sequence)
-    }
-
-    private fun playbackSequence(sequence: List<PatternColor>) {
-        viewModelScope.launch {
-            delay(START_DELAY_MS)
-            sequence.indices.forEach { index ->
-                _uiState.update { it.copy(highlightedIndex = index) }
-                delay(HIGHLIGHT_MS)
-                _uiState.update { it.copy(highlightedIndex = -1) }
-                delay(GAP_MS)
-            }
-            _uiState.update { it.copy(phase = PatternPhase.INPUT) }
-        }
+        runSequence(pauseMs = 0L)
     }
 
     fun onColorTap(color: PatternColor) {
-        val state = _uiState.value
-        if (state.phase != PatternPhase.INPUT) return
-
-        val nextInput = state.playerInput + color
-        val expected = state.sequence.getOrNull(nextInput.lastIndex)
-        if (expected != color) {
-            showMistakeThenRetry(state.sequence)
-            return
-        }
-
-        _uiState.update { it.copy(playerInput = nextInput) }
-
-        if (nextInput.size == state.sequence.size) {
-            advanceRound(state)
+        when (engine.tap(color)) {
+            TapOutcome.IGNORED -> Unit
+            TapOutcome.CORRECT, TapOutcome.GAME_COMPLETE -> publish()
+            TapOutcome.ROUND_COMPLETE -> {
+                publish()
+                runSequence(ROUND_COMPLETE_PAUSE_MS) { engine.nextRound() }
+            }
+            TapOutcome.MISTAKE -> {
+                publish()
+                runSequence(MISTAKE_PAUSE_MS) { engine.replayRound() }
+            }
         }
     }
 
-    private fun advanceRound(state: PatternRecallUiState) {
-        val nextRoundNumber = state.round + 1
-        if (nextRoundNumber > PatternRecallUiState.WIN_ROUND) {
-            _uiState.update { it.copy(round = nextRoundNumber, phase = PatternPhase.INPUT) }
-            return
-        }
-        viewModelScope.launch {
-            delay(ROUND_COMPLETE_PAUSE_MS)
-            _uiState.update { it.copy(round = nextRoundNumber) }
-            startRound(state.sequence + randomColor())
+    private fun runSequence(pauseMs: Long, prepare: () -> Unit = {}) {
+        sequenceJob?.cancel()
+        sequenceJob = viewModelScope.launch {
+            delay(pauseMs)
+            prepare()
+            publish()
+            delay(START_DELAY_MS)
+            for (color in engine.state.sequence) {
+                engine.highlight(color)
+                publish()
+                delay(HIGHLIGHT_MS)
+                engine.highlight(null)
+                publish()
+                delay(GAP_MS)
+            }
+            engine.beginInput()
+            publish()
         }
     }
 
-    private fun showMistakeThenRetry(sequence: List<PatternColor>) {
-        _uiState.update { it.copy(phase = PatternPhase.MISTAKE) }
-        viewModelScope.launch {
-            delay(MISTAKE_PAUSE_MS)
-            startRound(sequence)
-        }
+    private fun publish() {
+        _uiState.value = engine.state
     }
-
-    private fun randomColor(): PatternColor = PatternColor.entries[Random.nextInt(PatternColor.entries.size)]
 
     private companion object {
         const val START_DELAY_MS = 500L
-        const val HIGHLIGHT_MS = 550L
-        const val GAP_MS = 250L
-        const val ROUND_COMPLETE_PAUSE_MS = 700L
-        const val MISTAKE_PAUSE_MS = 1200L
+        const val HIGHLIGHT_MS = 650L
+        const val GAP_MS = 300L
+        const val ROUND_COMPLETE_PAUSE_MS = 900L
+        const val MISTAKE_PAUSE_MS = 1_400L
     }
 }

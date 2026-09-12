@@ -1,5 +1,7 @@
 package com.example.cognicare.data.model
 
+import androidx.annotation.DrawableRes
+
 enum class SyncStatus { PENDING, SYNCED, FAILED }
 
 /** The four cognitive domains the scoring service reports on. */
@@ -19,6 +21,21 @@ enum class Trend { IMPROVING, STABLE, DECLINING }
 enum class ReminderKind { GAME, MEDICATION, WALK, MEAL, APPOINTMENT }
 
 enum class AlertType { MISSED_ACTIVITY, PERFORMANCE_DROP, SYNC_OVERDUE }
+
+/**
+ * A person the patient should recognise, located in a shared family photo. The face box is a
+ * square given as fractions: [faceLeft] and [faceSize] of the photo's width, [faceTop] of its height.
+ * [isPatient] marks the patient themself, asked as "Who is this?" → "me".
+ */
+data class FamilyMember(
+    val name: String,
+    val relation: String,
+    @DrawableRes val photoRes: Int,
+    val faceLeft: Float,
+    val faceTop: Float,
+    val faceSize: Float,
+    val isPatient: Boolean = false
+)
 
 data class PatientProfile(
     val id: String,

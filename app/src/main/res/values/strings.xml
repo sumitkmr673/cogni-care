@@ -159,10 +159,61 @@
     <string name="pattern_recall_watch">Watch closely</string>
     <string name="pattern_recall_your_turn">Your turn</string>
     <string name="pattern_recall_try_again">Not quite — watch again</string>
+    <string name="pattern_recall_well_done">Well done!</string>
     <string name="color_red">Red</string>
     <string name="color_green">Green</string>
     <string name="color_blue">Blue</string>
     <string name="color_yellow">Yellow</string>
+
+    <!-- Speech to text -->
+    <string name="speech_button_idle">Tap to speak</string>
+    <string name="speech_button_listening">Listening… tap to stop</string>
+    <string name="speech_listening_hint">I\'m listening. Say your answer.</string>
+    <string name="speech_heard">“%1$s”</string>
+    <string name="speech_error_no_match">Sorry, I didn\'t catch that. Tap to try again, or choose an answer.</string>
+    <string name="speech_error_permission">The microphone is off for CogniCare. You can still choose an answer.</string>
+    <string name="speech_error_other">Voice isn\'t working right now. You can still choose an answer.</string>
+    <string name="speech_unavailable">Voice answers aren\'t available on this device. Please choose an answer below.</string>
+
+    <!-- Voice quiz (shared) -->
+    <string name="voice_quiz_progress">Question %1$d of %2$d</string>
+    <string name="voice_quiz_or_tap">Or tap your answer</string>
+    <string name="voice_quiz_you_said">You said “%1$s”.</string>
+    <string name="voice_quiz_feedback_correct">That\'s right — well done!</string>
+    <string name="voice_quiz_feedback_gentle">The answer is %1$s. That\'s okay — let\'s keep going.</string>
+
+    <!-- Orientation -->
+    <string name="orientation_title">Today and where we are</string>
+    <string name="orientation_q_year">What year is it?</string>
+    <string name="orientation_q_month">What month is it?</string>
+    <string name="orientation_q_date">What is today\'s date?</string>
+    <string name="orientation_q_day">What day of the week is it?</string>
+    <string name="orientation_q_place">Where are we right now?</string>
+    <string name="orientation_place_home">Home</string>
+    <string name="orientation_place_hospital">Hospital</string>
+    <string name="orientation_place_market">Market</string>
+
+    <!-- Family Identification -->
+    <string name="family_title">Who is this?</string>
+    <string name="family_prompt">Can you tell me who this is?</string>
+    <string name="family_answer_label">%1$s, your %2$s</string>
+    <string name="family_answer_self">you, %1$s</string>
+
+    <!-- Object Naming -->
+    <string name="object_naming_title">Name the object</string>
+    <string name="object_naming_prompt">What is this called?</string>
+    <string name="object_watch">Watch</string>
+    <string name="object_pencil">Pencil</string>
+    <string name="object_apple">Apple</string>
+    <string name="object_key">Key</string>
+    <string name="object_dog">Dog</string>
+
+    <!-- Daily Recall -->
+    <string name="daily_recall_title">Tell me about your day</string>
+    <string name="daily_recall_lead">Take your time. You can talk about what you ate, who you saw, or how you are feeling.</string>
+    <string name="daily_recall_you_said">What you told me</string>
+    <string name="daily_recall_done">I\'m finished</string>
+    <string name="daily_recall_skip">I\'d rather not talk today</string>
 
     <!-- Caregiver overview -->
     <string name="overview_eyebrow">Caregiver overview</string>

@@ -10,10 +10,13 @@ import com.example.cognicare.core.security.RequireArea
 import com.example.cognicare.data.model.AuthSession
 import com.example.cognicare.data.model.GameType
 import com.example.cognicare.ui.screens.patient.GameCompleteScreen
-import com.example.cognicare.ui.screens.patient.GamePlaceholderScreen
 import com.example.cognicare.ui.screens.patient.GamesHubScreen
 import com.example.cognicare.ui.screens.patient.PatientHomeScreen
+import com.example.cognicare.ui.screens.patient.games.DailyRecallScreen
+import com.example.cognicare.ui.screens.patient.games.FamilyIdentificationScreen
 import com.example.cognicare.ui.screens.patient.games.MemoryMatchScreen
+import com.example.cognicare.ui.screens.patient.games.ObjectNamingScreen
+import com.example.cognicare.ui.screens.patient.games.OrientationScreen
 import com.example.cognicare.ui.screens.patient.games.PatternRecallScreen
 
 @Composable
@@ -44,18 +47,19 @@ fun PatientNavHost(
             composable<GameRoute> { entry ->
                 val gameName = entry.toRoute<GameRoute>().gameType
                 val gameType = GameType.entries.firstOrNull { it.name == gameName }
-                val onComplete = { navController.navigate(GameCompleteRoute) { launchSingleTop = true } }
+                val onBack: () -> Unit = { navController.navigateUp() }
+                val onComplete: () -> Unit = {
+                    navController.navigate(GameCompleteRoute) { launchSingleTop = true }
+                }
 
                 when (gameType) {
                     GameType.MEMORY_MATCH -> MemoryMatchScreen(languageLabel = languageLabel, onComplete = onComplete)
                     GameType.PATTERN_RECALL -> PatternRecallScreen(languageLabel = languageLabel, onComplete = onComplete)
-                    // Every other game is still a placeholder until it gets a real build-out.
+                    GameType.OBJECT_NAMING -> ObjectNamingScreen(languageLabel, onBack, onComplete)
+                    GameType.DAILY_RECALL -> DailyRecallScreen(languageLabel, onBack, onComplete)
+                    GameType.ORIENTATION -> OrientationScreen(languageLabel, onBack, onComplete)
+                    GameType.FAMILY_IDENTIFICATION -> FamilyIdentificationScreen(languageLabel, onBack, onComplete)
                     null -> Unit
-                    else -> GamePlaceholderScreen(
-                        gameType = gameType,
-                        languageLabel = languageLabel,
-                        onBackToGames = { navController.navigateUp() }
-                    )
                 }
             }
             composable<GameCompleteRoute> {

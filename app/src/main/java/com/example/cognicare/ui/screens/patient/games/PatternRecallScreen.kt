@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,9 +53,10 @@ fun PatternRecallScreen(
     viewModel: PatternRecallViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val latestOnComplete by rememberUpdatedState(onComplete)
 
-    LaunchedEffect(state.isSolved) {
-        if (state.isSolved) onComplete()
+    LaunchedEffect(state.isComplete) {
+        if (state.isComplete) latestOnComplete()
     }
 
     PatientScreen(languageLabel = languageLabel) {
@@ -87,6 +89,7 @@ private fun StatusLine(state: PatternRecallUiState) {
         PatternPhase.SHOWING -> R.string.pattern_recall_watch
         PatternPhase.INPUT -> R.string.pattern_recall_your_turn
         PatternPhase.MISTAKE -> R.string.pattern_recall_try_again
+        PatternPhase.ROUND_COMPLETE, PatternPhase.COMPLETE -> R.string.pattern_recall_well_done
     }
     val color = if (state.phase == PatternPhase.MISTAKE) {
         MaterialTheme.colorScheme.error
@@ -111,7 +114,7 @@ private fun ColorPad(
     onTap: (PatternColor) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isHighlighted = state.sequence.getOrNull(state.highlightedIndex) == color
+    val isHighlighted = state.highlightedColor == color
     val baseColor = colorFor(color)
     val scale by animateFloatAsState(
         targetValue = if (isHighlighted) 1.06f else 1f,
