@@ -3,7 +3,8 @@ import unittest
 from datetime import timedelta
 from uuid import uuid4
 
-os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret")
+import jwt
+os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret-32-bytes-long-123456")
 
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
@@ -83,6 +84,56 @@ class AuthenticationTests(unittest.TestCase):
                 FakeSession(user),
             )
         self.assertEqual(token_error.exception.status_code, 401)
+
+    def test_token_with_unallowed_algorithm_is_rejected(self):
+        user = User(
+            id=uuid4(),
+            email="demo@example.com",
+            password_hash=hash_password("secret"),
+            display_name="Demo User",
+            role="CAREGIVER",
+            is_active=True,
+        )
+        token = jwt.encode(
+            {"sub": str(user.id)},
+            "test-only-secret-48-bytes-long-123456789012345678",
+            algorithm="HS384",
+        )
+        with self.assertRaises(HTTPException) as error:
+            get_current_user(
+                HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
+                FakeSession(user),
+            )
+        self.assertEqual(error.exception.status_code, 401)
+
+    def test_malformed_and_wrong_signature_tokens_are_rejected(self):
+        user = User(
+            id=uuid4(),
+            email="demo@example.com",
+            password_hash=hash_password("secret"),
+            display_name="Demo User",
+            role="CAREGIVER",
+            is_active=True,
+        )
+        wrong_signature = jwt.encode(
+            {"sub": str(user.id)},
+            "different-test-secret-32-bytes-long-123456",
+            algorithm="HS256",
+        )
+        unknown_critical_header = jwt.encode(
+            {"sub": str(user.id)},
+            "test-only-secret-32-bytes-long-123456",
+            algorithm="HS256",
+            headers={"crit": ["x-unknown-policy"], "x-unknown-policy": "reject-me"},
+        )
+        for token in ("not-a-jwt", wrong_signature, unknown_critical_header):
+            with self.subTest(token=token):
+                with self.assertRaises(HTTPException) as error:
+                    get_current_user(
+                        HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
+                        FakeSession(user),
+                    )
+                self.assertEqual(error.exception.status_code, 401)
 
     def test_inactive_user_cannot_login(self):
         user = User(
