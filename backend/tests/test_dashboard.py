@@ -192,7 +192,7 @@ class CaregiverDashboardAuthorizationTests(unittest.TestCase):
             Caregiver(id=uuid4(), user_id=self.caregiver_user.id, caregiver_type="FAMILY")
         )
         self.other_caregiver = self.store.add_caregiver(
-            Caregiver(id=uuid4(), user_id=self.other_caregiver_user.id, caregiver_type="DOCTOR")
+            Caregiver(id=uuid4(), user_id=self.other_caregiver_user.id, caregiver_type="PROFESSIONAL_CAREGIVER")
         )
         self.patient = self.store.add_patient(
             Patient(

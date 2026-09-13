@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.models.caregiver import Caregiver
+from app.models.doctor import Doctor
+from app.models.doctor_patient import DoctorPatient
 from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
@@ -21,13 +23,20 @@ from app.models.user import User
 from app.security import hash_password
 
 DEMO_CAREGIVER_EMAIL = "demo.caregiver@cogni-care.example"
+DEMO_SECONDARY_CAREGIVER_EMAIL = "demo.secondary@cogni-care.example"
+DEMO_DOCTOR_EMAIL = "demo.doctor@cogni-care.example"
 DEMO_PATIENT_EMAIL = "demo.patient@cogni-care.example"
 DEMO_CAREGIVER_PASSWORD = "DemoCaregiverOnly-2026!"
+DEMO_SECONDARY_CAREGIVER_PASSWORD = "DemoSecondaryOnly-2026!"
+DEMO_DOCTOR_PASSWORD = "DemoDoctorOnly-2026!"
 DEMO_PATIENT_PASSWORD = "DemoPatientOnly-2026!"
 
 DEMO_CAREGIVER_ID = UUID("d0000000-0000-0000-0000-000000000001")
 DEMO_PATIENT_ID = UUID("d0000000-0000-0000-0000-000000000002")
 DEMO_LINK_ID = UUID("d0000000-0000-0000-0000-000000000003")
+DEMO_SECONDARY_CAREGIVER_ID = UUID("d0000000-0000-0000-0000-000000000004")
+DEMO_DOCTOR_ID = UUID("d0000000-0000-0000-0000-000000000005")
+DEMO_DOCTOR_LINK_ID = UUID("d0000000-0000-0000-0000-000000000006")
 
 GAME_DEFINITIONS = (
     ("DAILY_RECALL", "Daily Recall", "MEMORY"),
@@ -43,7 +52,13 @@ def _utc_datetime(day: date, hour: int = 10) -> datetime:
 
 
 def _delete_existing_demo_data(db: Session) -> None:
-    caregiver_user = db.scalar(select(User).where(User.email == DEMO_CAREGIVER_EMAIL))
+    demo_emails = (
+        DEMO_CAREGIVER_EMAIL,
+        DEMO_SECONDARY_CAREGIVER_EMAIL,
+        DEMO_DOCTOR_EMAIL,
+    )
+    demo_users = db.scalars(select(User).where(User.email.in_(demo_emails))).all()
+    caregiver_user = next((user for user in demo_users if user.email == DEMO_CAREGIVER_EMAIL), None)
     patient_user = db.scalar(select(User).where(User.email == DEMO_PATIENT_EMAIL))
 
     caregiver_id = (
@@ -62,18 +77,15 @@ def _delete_existing_demo_data(db: Session) -> None:
     db.execute(delete(GameSession).where(GameSession.patient_id == patient_id))
     db.execute(delete(PerformanceMetric).where(PerformanceMetric.patient_id == patient_id))
     db.execute(delete(Reminder).where(Reminder.patient_id == patient_id))
-    db.execute(
-        delete(PatientCaregiver).where(
-            PatientCaregiver.patient_id == patient_id,
-            PatientCaregiver.caregiver_id == caregiver_id,
-        )
-    )
+    db.execute(delete(DoctorPatient).where(DoctorPatient.patient_id == patient_id))
+    db.execute(delete(PatientCaregiver).where(PatientCaregiver.patient_id == patient_id))
     db.execute(delete(Patient).where(Patient.id == patient_id))
-    db.execute(delete(Caregiver).where(Caregiver.id == caregiver_id))
+    db.execute(delete(Doctor).where(Doctor.id == DEMO_DOCTOR_ID))
+    db.execute(delete(Caregiver).where(Caregiver.id.in_((caregiver_id, DEMO_SECONDARY_CAREGIVER_ID))))
+    for user in demo_users:
+        db.delete(user)
     if patient_user:
         db.delete(patient_user)
-    if caregiver_user:
-        db.delete(caregiver_user)
     db.flush()
 
 
@@ -98,8 +110,22 @@ def seed_demo_data() -> tuple[UUID, UUID]:
         caregiver_user = User(
             email=DEMO_CAREGIVER_EMAIL,
             password_hash=hash_password(DEMO_CAREGIVER_PASSWORD),
-            display_name="Dr. Ananya Mehta (Demo)",
+            display_name="Ananya Sharma (Demo)",
             role="CAREGIVER",
+            is_active=True,
+        )
+        secondary_user = User(
+            email=DEMO_SECONDARY_CAREGIVER_EMAIL,
+            password_hash=hash_password(DEMO_SECONDARY_CAREGIVER_PASSWORD),
+            display_name="Ravi Sharma (Demo)",
+            role="CAREGIVER",
+            is_active=True,
+        )
+        doctor_user = User(
+            email=DEMO_DOCTOR_EMAIL,
+            password_hash=hash_password(DEMO_DOCTOR_PASSWORD),
+            display_name="Dr. Ananya Mehta (Demo)",
+            role="DOCTOR",
             is_active=True,
         )
         patient_user = User(
@@ -109,15 +135,22 @@ def seed_demo_data() -> tuple[UUID, UUID]:
             role="PATIENT",
             is_active=True,
         )
-        db.add_all([caregiver_user, patient_user])
+        db.add_all([caregiver_user, secondary_user, doctor_user, patient_user])
         db.flush()
 
         caregiver = Caregiver(
             id=DEMO_CAREGIVER_ID,
             user_id=caregiver_user.id,
-            caregiver_type="DOCTOR",
-            phone="+91-9876543210",
+            caregiver_type="FAMILY",
+            phone="+91-9000000001",
         )
+        secondary_caregiver = Caregiver(
+            id=DEMO_SECONDARY_CAREGIVER_ID,
+            user_id=secondary_user.id,
+            caregiver_type="PROFESSIONAL_CAREGIVER",
+            phone="+91-9000000002",
+        )
+        doctor = Doctor(id=DEMO_DOCTOR_ID, user_id=doctor_user.id)
         patient = Patient(
             id=DEMO_PATIENT_ID,
             user_id=patient_user.id,
@@ -125,7 +158,7 @@ def seed_demo_data() -> tuple[UUID, UUID]:
             timezone="Asia/Kolkata",
             gender="FEMALE",
         )
-        db.add_all([caregiver, patient])
+        db.add_all([caregiver, secondary_caregiver, doctor, patient])
         db.flush()
 
         db.add(
@@ -134,6 +167,20 @@ def seed_demo_data() -> tuple[UUID, UUID]:
                 patient_id=patient.id,
                 caregiver_id=caregiver.id,
                 is_primary=True,
+            )
+        )
+        db.add(
+            PatientCaregiver(
+                patient_id=patient.id,
+                caregiver_id=secondary_caregiver.id,
+                is_primary=False,
+            )
+        )
+        db.add(
+            DoctorPatient(
+                id=DEMO_DOCTOR_LINK_ID,
+                doctor_id=doctor.id,
+                patient_id=patient.id,
             )
         )
 

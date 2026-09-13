@@ -11,6 +11,7 @@ from app.db.session import Base
 if TYPE_CHECKING:
     from app.models.caregiver import Caregiver
     from app.models.game_session import GameSession
+    from app.models.doctor_patient import DoctorPatient
     from app.models.performance_metric import PerformanceMetric
     from app.models.reminder import Reminder
     from app.models.user import User
@@ -38,6 +39,9 @@ class Patient(Base):
 
     user: Mapped["User"] = relationship(back_populates="patient")
     caregiver_links: Mapped[list["PatientCaregiver"]] = relationship(
+        back_populates="patient", cascade="save-update, merge"
+    )
+    doctor_links: Mapped[list["DoctorPatient"]] = relationship(
         back_populates="patient", cascade="save-update, merge"
     )
     caregivers: Mapped[list["Caregiver"]] = relationship(

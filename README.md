@@ -7,8 +7,9 @@ platform designed to support elderly users, with a focus on the
 North Eastern Region (NER) of India.
 
 The platform combines cognitive games, caregiver progress monitoring,
-reminders, and a JWT-authenticated backend. The current prototype
-includes a caregiver web dashboard and patient gameplay session APIs.
+care-team access, reminders, and a JWT-authenticated backend. The current
+prototype includes a caregiver web dashboard, doctor read access, and patient
+gameplay session APIs.
 
 > Built as a solution for Smart India Hackathon (SIH) 2026.
 
@@ -21,6 +22,8 @@ The repository currently includes:
 - FastAPI backend with PostgreSQL, SQLAlchemy, and Alembic
 - JWT authentication and Argon2 password hashing
 - Caregiver dashboard APIs, scoped by `patient_caregivers`
+- Separate doctor profiles and explicitly assigned `doctor_patients` access
+- Primary/secondary caregiver care-team visibility and administration
 - Patient gameplay APIs for listing games, starting sessions, and submitting results
 - Repeatable demo data seeder
 - React/Vite caregiver web prototype (Overview and Performance screens)
@@ -77,7 +80,8 @@ Cogni-Care
 │
 └── PostgreSQL         Users, patients, caregivers,
                        games, sessions, results,
-                       performance metrics, reminders
+                       performance metrics, reminders,
+                       doctors, doctor_patients
 ```
 
 Identity always comes from the authenticated JWT:
@@ -150,16 +154,17 @@ Database health: http://localhost:8000/health/db
 
 ### Apply the schema and seed demo data
 
-On a fresh database, apply the core schema and mark the migration history as current:
+On a fresh database, apply the complete migration chain:
 
 ```bash
-docker compose exec backend alembic upgrade a06f3f5966ec
-docker compose exec backend alembic stamp head
+docker compose exec backend alembic upgrade head
 docker compose exec backend python -m app.scripts.seed_demo
 ```
 
-The seeder creates one demo caregiver, one demo patient, the five catalog games,
-recent sessions/results, ten daily performance records, and upcoming reminders.
+The seeder creates a primary family caregiver, a secondary professional
+caregiver, one separately profiled doctor assigned through `doctor_patients`,
+one demo patient, the five catalog games, recent sessions/results, ten daily
+performance records, and upcoming reminders.
 Re-running it replaces only those demo records.
 
 ### Start the caregiver web prototype
@@ -183,6 +188,8 @@ Development only. Do not reuse in production.
 
 ```text
 demo.caregiver@cogni-care.example / DemoCaregiverOnly-2026!
+demo.secondary@cogni-care.example / DemoSecondaryOnly-2026!
+demo.doctor@cogni-care.example    / DemoDoctorOnly-2026!
 demo.patient@cogni-care.example   / DemoPatientOnly-2026!
 ```
 
@@ -203,8 +210,8 @@ Authorization: Bearer <access_token>
 
 Missing, invalid, or expired tokens return HTTP 401.
 
-Roles are `CAREGIVER` and `PATIENT`. Do not send a client-supplied caregiver or
-patient UUID as the source of identity.
+Roles are `CAREGIVER`, `DOCTOR`, and `PATIENT`. Do not send a client-supplied
+caregiver, doctor, or patient UUID as the source of identity.
 
 ---
 
@@ -217,17 +224,36 @@ patient UUID as the source of identity.
 | `GET` | `/` | Service check |
 | `GET` | `/health/db` | PostgreSQL connectivity |
 
-### Caregiver dashboard
+### Caregiver and doctor read access
 
-Requires role `CAREGIVER`. Identity is the authenticated user, mapped to a
-`caregivers` row. Only patients linked through `patient_caregivers` are visible.
-Unrelated patients return HTTP 404. Non-caregivers receive HTTP 403.
+Caregivers are mapped through `caregivers` and can access patients linked
+through `patient_caregivers`. Primary/secondary status is a relationship
+property. Doctors are mapped through `doctors` and can only read patients
+explicitly linked through `doctor_patients`. Unrelated patients return HTTP
+404. Role mismatches return HTTP 403.
 
 | Method | Path |
 | --- | --- |
 | `GET` | `/patients` |
 | `GET` | `/patients/{patient_id}/dashboard` |
 | `GET` | `/patients/{patient_id}/performance` |
+| `GET` | `/patients/{patient_id}/sessions` |
+| `GET` | `/patients/{patient_id}/trends` |
+| `GET` | `/patients/{patient_id}/reminders` |
+
+### Care-team management
+
+All care-team management operations require the patient's primary caregiver.
+Secondary caregivers may view the team but receive HTTP 403 for management
+attempts. Doctors and patients cannot use these endpoints.
+
+| Method | Path |
+| --- | --- |
+| `GET` | `/patients/{patient_id}/care-team` |
+| `POST` | `/patients/{patient_id}/care-team` |
+| `DELETE` | `/patients/{patient_id}/care-team/{caregiver_id}` |
+
+The POST body is `{ "caregiver_id": "<existing-caregiver-uuid>", "is_primary": false }`.
 
 `demo_caregiver_id` is not used for authorization.
 

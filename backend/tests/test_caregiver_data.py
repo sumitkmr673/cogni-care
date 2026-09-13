@@ -29,12 +29,12 @@ class CaregiverDataTests(unittest.TestCase):
 
     def test_caregiver_profile_resolves_from_authenticated_user(self):
         user = User(id=uuid4(), role="CAREGIVER", is_active=True)
-        caregiver = Caregiver(id=uuid4(), user_id=user.id, caregiver_type="DOCTOR")
+        caregiver = Caregiver(id=uuid4(), user_id=user.id, caregiver_type="FAMILY")
         resolved = get_current_caregiver(user, FakeSession(caregiver))
         self.assertIs(resolved, caregiver)
 
     def test_patient_access_is_scoped_to_caregiver_relationship(self):
-        caregiver = Caregiver(id=uuid4(), user_id=uuid4(), caregiver_type="DOCTOR")
+        caregiver = Caregiver(id=uuid4(), user_id=uuid4(), caregiver_type="FAMILY")
         patient = Patient(id=uuid4(), user_id=uuid4(), preferred_language="en", timezone="UTC")
         self.assertIs(
             get_accessible_patient(patient.id, caregiver, FakeSession(patient)),
