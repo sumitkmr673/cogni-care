@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { LoadingState } from "./components/caregiver/CaregiverWidgets";
 import CaregiverLayout from "./components/layout/CaregiverLayout";
@@ -13,8 +12,7 @@ import PerformancePage from "./pages/caregiver/PerformancePage";
 import ProfilePage from "./pages/caregiver/ProfilePage";
 import RemindersPage from "./pages/caregiver/RemindersPage";
 
-function ProtectedRoutes({ authenticated, signedOut, caregiver, onSignOut }) {
-  if (signedOut) return <Navigate to="/" replace />;
+function ProtectedRoutes({ authenticated, caregiver, onSignOut }) {
   if (!authenticated) return <Navigate to="/login" replace />;
   return <Outlet context={{ caregiver, onSignOut }} />;
 }
@@ -22,10 +20,8 @@ function ProtectedRoutes({ authenticated, signedOut, caregiver, onSignOut }) {
 export default function App() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const [signedOut, setSignedOut] = useState(false);
   if (auth.status === "checking") return <LoadingState message="Checking your caregiver session…" />;
   const signOut = () => {
-    setSignedOut(true);
     auth.signOut();
     navigate("/", { replace: true });
   };
@@ -34,7 +30,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={auth.status === "authenticated" ? <Navigate to="/app" replace /> : <HomePage />} />
       <Route path="/login" element={<LoginPage authenticated={auth.status === "authenticated"} onSignIn={auth.signIn} />} />
-      <Route element={<ProtectedRoutes authenticated={auth.status === "authenticated"} signedOut={signedOut} caregiver={auth.caregiver} onSignOut={signOut} />}>
+      <Route element={<ProtectedRoutes authenticated={auth.status === "authenticated"} caregiver={auth.caregiver} onSignOut={signOut} />}>
         <Route path="/app" element={<CaregiverLayout caregiver={auth.caregiver} onSignOut={signOut} />}>
           <Route index element={<OverviewPage />} />
           <Route path="patients" element={<PatientsPage />} />

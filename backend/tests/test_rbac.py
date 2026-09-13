@@ -117,6 +117,14 @@ class RealRoleAuthorizationTests(unittest.TestCase):
         )
         self.assertEqual(duplicate.status_code, 409)
 
+    def test_invalid_care_team_target_is_not_found(self):
+        response = self.client.post(
+            f"/patients/{self.patient_id}/care-team",
+            headers=self._demo_headers(),
+            json={"caregiver_id": str(uuid4()), "is_primary": False},
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_secondary_caregiver_management_is_forbidden(self):
         headers = self._headers(DEMO_SECONDARY_CAREGIVER_EMAIL, DEMO_SECONDARY_CAREGIVER_PASSWORD)
         response = self.client.post(
@@ -155,6 +163,19 @@ class RealRoleAuthorizationTests(unittest.TestCase):
         ).json()["members"]
         self.assertEqual(sum(member["is_primary"] for member in members), 1)
         self.assertTrue(next(member["is_primary"] for member in members if member["caregiver_id"] == self.secondary_id))
+        old_primary_management = self.client.post(
+            f"/patients/{self.patient_id}/care-team",
+            headers=self._demo_headers(),
+            json={"caregiver_id": self.caregiver_id, "is_primary": False},
+        )
+        self.assertEqual(old_primary_management.status_code, 403)
+
+    def test_primary_transfer_to_unassigned_caregiver_is_not_found(self):
+        response = self.client.put(
+            f"/patients/{self.patient_id}/care-team/{uuid4()}/primary",
+            headers=self._demo_headers(),
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_secondary_cannot_transfer_primary(self):
         response = self.client.put(
@@ -162,6 +183,17 @@ class RealRoleAuthorizationTests(unittest.TestCase):
             headers=self._headers(DEMO_SECONDARY_CAREGIVER_EMAIL, DEMO_SECONDARY_CAREGIVER_PASSWORD),
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_patient_and_doctor_cannot_transfer_primary(self):
+        for headers in (
+            self._headers(DEMO_DOCTOR_EMAIL, DEMO_DOCTOR_PASSWORD),
+            self._headers(DEMO_PATIENT_EMAIL, DEMO_PATIENT_PASSWORD),
+        ):
+            response = self.client.put(
+                f"/patients/{self.patient_id}/care-team/{self.secondary_id}/primary",
+                headers=headers,
+            )
+            self.assertEqual(response.status_code, 403)
 
     def test_primary_cannot_be_removed(self):
         response = self.client.delete(
