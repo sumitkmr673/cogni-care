@@ -20,41 +20,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column(
-        "patient_caregivers",
-        sa.Column(
-            "updated_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=False,
-        ),
-    )
-
-    op.drop_index(
-        "ix_performance_metrics_patient_date",
-        table_name="performance_metrics",
-    )
-
-    op.create_unique_constraint(
-        "uq_performance_metrics_patient_date",
-        "performance_metrics",
-        ["patient_id", "metric_date"],
-    )
+    # The base migration already contains these corrected definitions. Keep this
+    # revision as a no-op so fresh databases and existing databases converge.
+    pass
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint(
-        "uq_performance_metrics_patient_date",
-        "performance_metrics",
-        type_="unique",
-    )
-
-    op.create_index(
-        "ix_performance_metrics_patient_date",
-        "performance_metrics",
-        ["patient_id", "metric_date"],
-        unique=True,
-    )
-
-    op.drop_column("patient_caregivers", "updated_at")
+    pass

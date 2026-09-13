@@ -10,6 +10,7 @@ from app.db.session import Base
 
 if TYPE_CHECKING:
     from app.models.patient import Patient
+    from app.models.patient_caregiver import PatientCaregiver
     from app.models.user import User
 
 

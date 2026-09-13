@@ -4,13 +4,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_current_user, get_db
+from app.api.dependencies import (
+    PatientAccessor,
+    get_accessible_patient_for_accessor,
+    get_current_caregiver,
+    get_current_patient_accessor,
+    get_db,
+)
 from app.models.caregiver import Caregiver
 from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
 from app.models.patient import Patient
-from app.models.patient_caregiver import PatientCaregiver
 from app.models.performance_metric import PerformanceMetric
 from app.models.reminder import Reminder
 from app.models.user import User
@@ -35,45 +40,6 @@ CAREGIVER_ACCESS_DESCRIPTION = (
 )
 
 
-def get_current_caregiver(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Caregiver:
-    if current_user.role != "CAREGIVER":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Caregiver access required",
-        )
-    caregiver = db.scalar(select(Caregiver).where(Caregiver.user_id == current_user.id))
-    if caregiver is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Caregiver access required",
-        )
-    return caregiver
-
-
-def _accessible_patient(
-    db: Session,
-    patient_id: UUID,
-    caregiver_id: UUID,
-) -> Patient:
-    patient = db.scalar(
-        select(Patient)
-        .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
-        .where(
-            Patient.id == patient_id,
-            PatientCaregiver.caregiver_id == caregiver_id,
-        )
-    )
-    if patient is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found",
-        )
-    return patient
-
-
 @router.get(
     "/patients",
     response_model=PatientsResponse,
@@ -81,16 +47,29 @@ def _accessible_patient(
     description=CAREGIVER_ACCESS_DESCRIPTION,
 )
 def list_patients(
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> PatientsResponse:
-    rows = db.execute(
-        select(Patient, User.display_name)
-        .join(User, User.id == Patient.user_id)
-        .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
-        .where(PatientCaregiver.caregiver_id == caregiver.id)
-        .order_by(User.display_name, Patient.id)
-    ).all()
+    if accessor.caregiver is not None:
+        from app.models.patient_caregiver import PatientCaregiver
+
+        rows = db.execute(
+            select(Patient, User.display_name)
+            .join(User, User.id == Patient.user_id)
+            .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
+            .where(PatientCaregiver.caregiver_id == accessor.caregiver.id)
+            .order_by(User.display_name, Patient.id)
+        ).all()
+    else:
+        from app.models.doctor_patient import DoctorPatient
+
+        rows = db.execute(
+            select(Patient, User.display_name)
+            .join(User, User.id == Patient.user_id)
+            .join(DoctorPatient, DoctorPatient.patient_id == Patient.id)
+            .where(DoctorPatient.doctor_id == accessor.doctor.id)
+            .order_by(User.display_name, Patient.id)
+        ).all()
 
     return PatientsResponse(
         patients=[
@@ -114,21 +93,25 @@ def list_patients(
 )
 def get_patient_dashboard(
     patient_id: UUID,
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> DashboardResponse:
-    patient = _accessible_patient(db, patient_id, caregiver.id)
+    patient = get_accessible_patient_for_accessor(patient_id, accessor, db)
     display_name = db.scalar(select(User.display_name).where(User.id == patient.user_id))
 
-    relationship_row = db.execute(
-        select(PatientCaregiver, Caregiver, User.display_name)
-        .join(Caregiver, Caregiver.id == PatientCaregiver.caregiver_id)
-        .join(User, User.id == Caregiver.user_id)
-        .where(
-            PatientCaregiver.patient_id == patient_id,
-            PatientCaregiver.caregiver_id == caregiver.id,
-        )
-    ).one_or_none()
+    relationship_row = None
+    if accessor.caregiver is not None:
+        from app.models.patient_caregiver import PatientCaregiver
+
+        relationship_row = db.execute(
+            select(PatientCaregiver, Caregiver, User.display_name)
+            .join(Caregiver, Caregiver.id == PatientCaregiver.caregiver_id)
+            .join(User, User.id == Caregiver.user_id)
+            .where(
+                PatientCaregiver.patient_id == patient_id,
+                PatientCaregiver.caregiver_id == accessor.caregiver.id,
+            )
+        ).one_or_none()
 
     caregiver_relationship = None
     if relationship_row is not None:
@@ -230,10 +213,10 @@ def get_patient_dashboard(
 )
 def get_patient_performance(
     patient_id: UUID,
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> PerformanceHistoryResponse:
-    _accessible_patient(db, patient_id, caregiver.id)
+    get_accessible_patient_for_accessor(patient_id, accessor, db)
     metrics = db.scalars(
         select(PerformanceMetric)
         .where(PerformanceMetric.patient_id == patient_id)
@@ -283,10 +266,10 @@ def _session_response(
 def get_patient_sessions(
     patient_id: UUID,
     limit: int = Query(default=50, ge=1, le=100),
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> list[RecentGameSession]:
-    _accessible_patient(db, patient_id, caregiver.id)
+    get_accessible_patient_for_accessor(patient_id, accessor, db)
     rows = db.execute(
         select(GameSession, Game, GameResult)
         .join(Game, Game.id == GameSession.game_id)
@@ -305,10 +288,10 @@ def get_patient_sessions(
 )
 def get_patient_trends(
     patient_id: UUID,
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> PerformanceHistoryResponse:
-    _accessible_patient(db, patient_id, caregiver.id)
+    get_accessible_patient_for_accessor(patient_id, accessor, db)
     metrics = db.scalars(
         select(PerformanceMetric)
         .where(PerformanceMetric.patient_id == patient_id)
@@ -327,10 +310,10 @@ def get_patient_trends(
 )
 def get_patient_reminders(
     patient_id: UUID,
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> list[ReminderItem]:
-    _accessible_patient(db, patient_id, caregiver.id)
+    get_accessible_patient_for_accessor(patient_id, accessor, db)
     reminders = db.scalars(
         select(Reminder)
         .where(Reminder.patient_id == patient_id)
@@ -363,7 +346,9 @@ def create_patient_reminder(
     caregiver: Caregiver = Depends(get_current_caregiver),
     db: Session = Depends(get_db),
 ) -> ReminderItem:
-    _accessible_patient(db, patient_id, caregiver.id)
+    from app.api.dependencies import get_accessible_patient
+
+    get_accessible_patient(patient_id, caregiver, db)
     reminder = Reminder(patient_id=patient_id, **reminder_data.model_dump())
     db.add(reminder)
     db.commit()

@@ -24,6 +24,23 @@ class CaregiverRelationship(BaseModel):
     is_primary: bool
 
 
+class CareTeamMember(BaseModel):
+    caregiver_id: UUID
+    display_name: str
+    caregiver_type: str
+    is_primary: bool
+
+
+class CareTeamResponse(BaseModel):
+    patient_id: UUID
+    members: list[CareTeamMember]
+
+
+class CareTeamAssignmentRequest(BaseModel):
+    caregiver_id: UUID
+    is_primary: bool = False
+
+
 class SessionResult(BaseModel):
     score: float
     accuracy: float | None
