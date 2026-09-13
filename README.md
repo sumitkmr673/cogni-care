@@ -251,9 +251,12 @@ attempts. Doctors and patients cannot use these endpoints.
 | --- | --- |
 | `GET` | `/patients/{patient_id}/care-team` |
 | `POST` | `/patients/{patient_id}/care-team` |
+| `PUT` | `/patients/{patient_id}/care-team/{caregiver_id}/primary` |
 | `DELETE` | `/patients/{patient_id}/care-team/{caregiver_id}` |
 
 The POST body is `{ "caregiver_id": "<existing-caregiver-uuid>", "is_primary": false }`.
+The PUT endpoint transfers primary status to an already assigned secondary caregiver
+atomically. The DELETE endpoint cannot remove the current primary caregiver.
 
 `demo_caregiver_id` is not used for authorization.
 
