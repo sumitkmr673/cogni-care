@@ -31,6 +31,7 @@ from app.schemas.dashboard import (
     ReminderItem,
     SessionResult,
 )
+from app.schemas.reminder import ReminderCreateRequest
 
 router = APIRouter(tags=["caregiver dashboard"])
 

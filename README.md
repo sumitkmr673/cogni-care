@@ -161,11 +161,15 @@ docker compose exec backend alembic upgrade head
 docker compose exec backend python -m app.scripts.seed_demo
 ```
 
-The seeder creates a primary family caregiver, a secondary professional
-caregiver, one separately profiled doctor assigned through `doctor_patients`,
-one demo patient, the five catalog games, recent sessions/results, ten daily
-performance records, and upcoming reminders.
-Re-running it replaces only those demo records.
+The seeder creates exactly ten deterministic development accounts: four
+patients, four caregivers, and two doctors. It creates nine caregiver
+assignments (including primary and secondary relationships), six explicit
+doctor-patient assignments, all five catalog games, 86 completed sessions,
+40 performance records, and reminders for every patient. Each patient has
+their own activity history and relationship structure; one caregiver and one
+doctor are assigned to multiple patients.
+Re-running it replaces only records belonging to these ten development
+accounts and does not reset the database or duplicate game definitions.
 
 ### Start the caregiver web prototype
 
@@ -189,9 +193,20 @@ Development only. Do not reuse in production.
 ```text
 demo.caregiver@cogni-care.example / DemoCaregiverOnly-2026!
 demo.secondary@cogni-care.example / DemoSecondaryOnly-2026!
+demo.caregiver.northeast@cogni-care.example / DemoNortheastCaregiver-2026!
+demo.caregiver.community@cogni-care.example / DemoCommunityCaregiver-2026!
 demo.doctor@cogni-care.example    / DemoDoctorOnly-2026!
+demo.doctor.northeast@cogni-care.example / DemoNortheastDoctor-2026!
 demo.patient@cogni-care.example   / DemoPatientOnly-2026!
+demo.patient.assam@cogni-care.example / DemoAssamPatient-2026!
+demo.patient.sikkim@cogni-care.example / DemoSikkimPatient-2026!
+demo.patient.mizoram@cogni-care.example / DemoMizoramPatient-2026!
 ```
+
+The primary caregiver is assigned to the Sharma and Das demo patients.
+The secondary caregiver is assigned to the Sharma and Bhutia patients.
+The two doctors have separate overlapping patient sets, and doctors have no
+caregiver profiles.
 
 ---
 
