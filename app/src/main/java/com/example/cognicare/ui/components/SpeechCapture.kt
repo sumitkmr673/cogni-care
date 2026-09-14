@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -188,6 +189,8 @@ fun VoiceAnswerCapture(
     val context = LocalContext.current
     val controller = rememberSpeechRecognizerController()
     val latestOnResult by rememberUpdatedState(onResult)
+    // Listen in the language the patient chose, not the phone's system language.
+    val languageTag = LocalConfiguration.current.locales[0].toLanguageTag()
 
     SideEffect { controller.onFinalResult = { latestOnResult(it) } }
     LaunchedEffect(resetKey) { controller.reset() }
@@ -196,14 +199,14 @@ fun VoiceAnswerCapture(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) controller.start() else controller.reportPermissionDenied()
+        if (granted) controller.start(languageTag) else controller.reportPermissionDenied()
     }
 
     val onSpeakClick: () -> Unit = {
         when {
             controller.isListening -> controller.stop()
             ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED -> controller.start()
+                PackageManager.PERMISSION_GRANTED -> controller.start(languageTag)
             else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }

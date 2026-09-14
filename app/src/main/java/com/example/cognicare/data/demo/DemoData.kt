@@ -1,6 +1,8 @@
 package com.example.cognicare.data.demo
 
+import androidx.annotation.StringRes
 import com.example.cognicare.R
+import com.example.cognicare.core.locale.AppLocaleProvider
 import com.example.cognicare.core.time.startOfDay
 import com.example.cognicare.data.model.DailyScorePoint
 import com.example.cognicare.data.model.FamilyMember
@@ -65,16 +67,44 @@ object DemoData {
         familyMember("Vikram", "husband", left = 430, top = 105, size = 95)
     )
 
-    fun reminders(now: Long = System.currentTimeMillis()): List<Reminder> {
+    /**
+     * Reminder titles live in resources so the demo reads in the chosen language. Real reminders
+     * are caregiver-entered text, which is why [Reminder.title] itself stays a plain string.
+     */
+    private data class ReminderTemplate(
+        val id: String,
+        @StringRes val titleRes: Int,
+        val kind: ReminderKind,
+        val offsetMillis: Long,
+        val isRecurring: Boolean = true
+    )
+
+    private val reminderTemplates = listOf(
+        ReminderTemplate("reminder-walk", R.string.reminder_morning_walk, ReminderKind.WALK, 7 * HOUR + 30 * MINUTE),
+        ReminderTemplate("reminder-medicine", R.string.reminder_medicine, ReminderKind.MEDICATION, 9 * HOUR),
+        ReminderTemplate("reminder-lunch", R.string.reminder_lunch, ReminderKind.MEAL, 13 * HOUR),
+        ReminderTemplate("reminder-game", R.string.reminder_game, ReminderKind.GAME, 15 * HOUR + 30 * MINUTE),
+        ReminderTemplate("reminder-evening-walk", R.string.reminder_evening_walk, ReminderKind.WALK, DAY + 18 * HOUR),
+        ReminderTemplate("reminder-care-review", R.string.reminder_care_review, ReminderKind.APPOINTMENT, 3 * DAY + 16 * HOUR + 30 * MINUTE, isRecurring = false)
+    )
+
+    fun reminders(
+        locale: AppLocaleProvider,
+        completedIds: Set<String> = emptySet(),
+        now: Long = System.currentTimeMillis()
+    ): List<Reminder> {
         val today = startOfDay(now)
-        return listOf(
-            Reminder("reminder-walk", PATIENT_ID, "Morning walk", ReminderKind.WALK, today + 7 * HOUR + 30 * MINUTE, isRecurring = true, completed = false),
-            Reminder("reminder-medicine", PATIENT_ID, "Take morning medicine", ReminderKind.MEDICATION, today + 9 * HOUR, isRecurring = true, completed = false),
-            Reminder("reminder-lunch", PATIENT_ID, "Lunch with family", ReminderKind.MEAL, today + 13 * HOUR, isRecurring = true, completed = false),
-            Reminder("reminder-game", PATIENT_ID, "Complete today's memory game", ReminderKind.GAME, today + 15 * HOUR + 30 * MINUTE, isRecurring = true, completed = false),
-            Reminder("reminder-evening-walk", PATIENT_ID, "Evening walk", ReminderKind.WALK, today + DAY + 18 * HOUR, isRecurring = true, completed = false),
-            Reminder("reminder-care-review", PATIENT_ID, "Care review appointment", ReminderKind.APPOINTMENT, today + 3 * DAY + 16 * HOUR + 30 * MINUTE, isRecurring = false, completed = false)
-        )
+        return reminderTemplates.map { template ->
+            Reminder(
+                id = template.id,
+                patientId = PATIENT_ID,
+                title = locale.getString(template.titleRes),
+                kind = template.kind,
+                scheduledTime = today + template.offsetMillis,
+                isRecurring = template.isRecurring,
+                completed = template.id in completedIds
+            )
+        }
     }
 
     fun dashboard(

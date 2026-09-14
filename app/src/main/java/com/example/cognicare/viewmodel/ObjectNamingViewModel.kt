@@ -1,10 +1,9 @@
 package com.example.cognicare.viewmodel
 
-import android.content.Context
 import androidx.annotation.StringRes
 import com.example.cognicare.R
+import com.example.cognicare.core.locale.AppLocaleProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 private data class NamedObject(val emoji: String, @StringRes val nameRes: Int, val synonyms: List<String> = emptyList())
@@ -20,19 +19,20 @@ private val namingObjects = listOf(
 
 @HiltViewModel
 class ObjectNamingViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val locale: AppLocaleProvider
 ) : VoiceQuizViewModel() {
 
     override fun buildQuestions(): List<VoiceQuizQuestion> {
-        val names = namingObjects.map { context.getString(it.nameRes) }
+        val names = namingObjects.map { locale.getString(it.nameRes) }
         return namingObjects.mapIndexed { index, item ->
             val name = names[index]
             VoiceQuizQuestion(
                 id = name,
-                prompt = context.getString(R.string.object_naming_prompt),
+                prompt = locale.getString(R.string.object_naming_prompt),
                 visual = QuizVisual.Emoji(item.emoji),
                 correctOption = name,
                 answerLabel = name,
+                // The English synonyms stay accepted so a mixed-language answer still counts.
                 acceptedAnswers = listOf(name) + item.synonyms,
                 options = quizChoices(name, names)
             )

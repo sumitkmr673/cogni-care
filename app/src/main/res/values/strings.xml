@@ -312,6 +312,21 @@
     <string name="settings_privacy_title">Privacy &amp; data</string>
     <string name="settings_privacy_body">Patient information is kept on the device until it syncs over a secure connection. CogniCare shows insights from game activity only and never makes a diagnosis.</string>
 
+    <!-- Demo reminders -->
+    <string name="reminder_morning_walk">Morning walk</string>
+    <string name="reminder_medicine">Take morning medicine</string>
+    <string name="reminder_lunch">Lunch with family</string>
+    <string name="reminder_game">Complete today\'s memory game</string>
+    <string name="reminder_evening_walk">Evening walk</string>
+    <string name="reminder_care_review">Care review appointment</string>
+
+    <!-- Demo family relations -->
+    <string name="relation_grandson">grandson</string>
+    <string name="relation_son">son</string>
+    <string name="relation_granddaughter">granddaughter</string>
+    <string name="relation_daughter_in_law">daughter-in-law</string>
+    <string name="relation_husband">husband</string>
+
     <!-- Roles -->
     <string name="role_patient">Patient</string>
     <string name="role_doctor_caregiver">Doctor · Caregiver</string>

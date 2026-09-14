@@ -1,5 +1,6 @@
 package com.example.cognicare.repository
 
+import com.example.cognicare.core.locale.AppLocaleProvider
 import com.example.cognicare.data.demo.DemoData
 import com.example.cognicare.data.model.PatientDashboard
 import com.example.cognicare.data.model.PatientProfile
@@ -13,21 +14,28 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class DemoCareRepository @Inject constructor() : CareRepository {
+class DemoCareRepository @Inject constructor(
+    private val locale: AppLocaleProvider
+) : CareRepository {
 
-    private val reminders = MutableStateFlow(DemoData.reminders())
+    // Only completion is state; titles are rebuilt per read so they follow the chosen language.
+    private val completedIds = MutableStateFlow(emptySet<String>())
 
     override fun observePatients(patientIds: List<String>): Flow<List<PatientProfile>> =
         flowOf(DemoData.patients.filter { it.id in patientIds })
 
     override fun observeReminders(patientId: String): Flow<List<Reminder>> =
-        reminders.map { all -> all.filter { it.patientId == patientId }.sortedBy { it.scheduledTime } }
+        completedIds.map { completed ->
+            DemoData.reminders(locale, completed)
+                .filter { it.patientId == patientId }
+                .sortedBy { it.scheduledTime }
+        }
 
     override fun observeDashboard(patientId: String): Flow<PatientDashboard?> =
-        reminders.map { all ->
+        completedIds.map { completed ->
             val patient = DemoData.patients.firstOrNull { it.id == patientId } ?: return@map null
             val now = System.currentTimeMillis()
-            val upcoming = all
+            val upcoming = DemoData.reminders(locale, completed, now)
                 .filter { it.patientId == patientId && !it.completed && it.scheduledTime >= now }
                 .sortedBy { it.scheduledTime }
                 .take(3)
@@ -35,8 +43,8 @@ class DemoCareRepository @Inject constructor() : CareRepository {
         }
 
     override suspend fun setReminderCompleted(reminderId: String, completed: Boolean) {
-        reminders.update { all ->
-            all.map { if (it.id == reminderId) it.copy(completed = completed) else it }
+        completedIds.update { current ->
+            if (completed) current + reminderId else current - reminderId
         }
     }
 }

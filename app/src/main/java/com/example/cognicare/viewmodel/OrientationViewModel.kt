@@ -1,12 +1,10 @@
 package com.example.cognicare.viewmodel
 
-import android.content.Context
 import com.example.cognicare.R
+import com.example.cognicare.core.locale.AppLocaleProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import java.text.DateFormatSymbols
 import java.util.Calendar
-import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -14,17 +12,18 @@ import javax.inject.Inject
  * (year, month, date, weekday, place). Season and state/county/floor are left out: season
  * is ambiguous across NER climates, and the others don't apply at home.
  *
- * Correct answers come from the device clock. Results are indicators for caregiver trends
- * only; this is not an MMSE administration and nothing here maps to a diagnosis.
+ * Correct answers come from the device clock, and month and weekday names follow the chosen
+ * language. Results are indicators for caregiver trends only; this is not an MMSE
+ * administration and nothing here maps to a diagnosis.
  */
 @HiltViewModel
 class OrientationViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val locale: AppLocaleProvider
 ) : VoiceQuizViewModel() {
 
     override fun buildQuestions(): List<VoiceQuizQuestion> {
         val now = Calendar.getInstance()
-        val symbols = DateFormatSymbols.getInstance(Locale.getDefault())
+        val symbols = DateFormatSymbols.getInstance(locale.locale)
 
         val year = now.get(Calendar.YEAR).toString()
         val month = symbols.months[now.get(Calendar.MONTH)]
@@ -32,11 +31,11 @@ class OrientationViewModel @Inject constructor(
         val weekday = symbols.weekdays[now.get(Calendar.DAY_OF_WEEK)]
         val daysInMonth = now.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-        val home = context.getString(R.string.orientation_place_home)
+        val home = locale.getString(R.string.orientation_place_home)
         val places = listOf(
             home,
-            context.getString(R.string.orientation_place_hospital),
-            context.getString(R.string.orientation_place_market)
+            locale.getString(R.string.orientation_place_hospital),
+            locale.getString(R.string.orientation_place_market)
         )
         val nearbyDates = listOf(-3, -2, -1, 1, 2, 3)
             .map { date + it }
@@ -46,7 +45,7 @@ class OrientationViewModel @Inject constructor(
         return listOf(
             VoiceQuizQuestion(
                 id = "year",
-                prompt = context.getString(R.string.orientation_q_year),
+                prompt = locale.getString(R.string.orientation_q_year),
                 visual = QuizVisual.Emoji("📅"),
                 correctOption = year,
                 answerLabel = year,
@@ -55,7 +54,7 @@ class OrientationViewModel @Inject constructor(
             ),
             VoiceQuizQuestion(
                 id = "month",
-                prompt = context.getString(R.string.orientation_q_month),
+                prompt = locale.getString(R.string.orientation_q_month),
                 visual = QuizVisual.Emoji("🗓️"),
                 correctOption = month,
                 answerLabel = month,
@@ -64,7 +63,7 @@ class OrientationViewModel @Inject constructor(
             ),
             VoiceQuizQuestion(
                 id = "date",
-                prompt = context.getString(R.string.orientation_q_date),
+                prompt = locale.getString(R.string.orientation_q_date),
                 visual = QuizVisual.Emoji("📆"),
                 correctOption = date.toString(),
                 answerLabel = ordinal(date),
@@ -73,7 +72,7 @@ class OrientationViewModel @Inject constructor(
             ),
             VoiceQuizQuestion(
                 id = "weekday",
-                prompt = context.getString(R.string.orientation_q_day),
+                prompt = locale.getString(R.string.orientation_q_day),
                 visual = QuizVisual.Emoji("☀️"),
                 correctOption = weekday,
                 answerLabel = weekday,
@@ -82,17 +81,20 @@ class OrientationViewModel @Inject constructor(
             ),
             VoiceQuizQuestion(
                 id = "place",
-                prompt = context.getString(R.string.orientation_q_place),
+                prompt = locale.getString(R.string.orientation_q_place),
                 visual = QuizVisual.Emoji("🏠"),
                 correctOption = home,
                 answerLabel = home,
+                // The English words stay accepted so a mixed-language answer still counts.
                 acceptedAnswers = listOf(home, "home", "house"),
                 options = quizChoices(home, places)
             )
         )
     }
 
+    /** English ordinals only; other languages accept the plain number. */
     private fun ordinal(day: Int): String {
+        if (locale.language.tag != "en") return day.toString()
         val suffix = when {
             day % 100 in 11..13 -> "th"
             day % 10 == 1 -> "st"
