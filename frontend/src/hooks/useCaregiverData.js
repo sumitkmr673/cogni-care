@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   clearToken,
   createPatientReminder,
+  getCareTeam,
   getPatientDashboard,
   getPatientReminders,
   getPatientSessions,
@@ -16,6 +17,7 @@ export default function useCaregiverData(patientId) {
   const [performance, setPerformance] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [reminders, setReminders] = useState([]);
+  const [careTeam, setCareTeam] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [emptyPatients, setEmptyPatients] = useState(false);
@@ -33,20 +35,23 @@ export default function useCaregiverData(patientId) {
         setPerformance([]);
         setSessions([]);
         setReminders([]);
+        setCareTeam([]);
         setEmptyPatients(true);
         return;
       }
-      const [nextDashboard, nextTrends, nextSessions, nextReminders] = await Promise.all([
+      const [nextDashboard, nextTrends, nextSessions, nextReminders, nextCareTeam] = await Promise.all([
         getPatientDashboard(nextId),
         getPatientTrends(nextId),
         getPatientSessions(nextId, 50),
         getPatientReminders(nextId),
+        getCareTeam(nextId).then((res) => res?.members || []).catch(() => []),
       ]);
       setEmptyPatients(false);
       setDashboard(nextDashboard);
       setPerformance(nextTrends.metrics);
       setSessions(nextSessions);
       setReminders(nextReminders);
+      setCareTeam(nextCareTeam);
     } catch (requestError) {
       if (requestError.status === 401) clearToken();
       setError(requestError.message);
@@ -69,6 +74,7 @@ export default function useCaregiverData(patientId) {
     performance,
     sessions,
     reminders,
+    careTeam,
     loading,
     error,
     emptyPatients,

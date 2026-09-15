@@ -21,7 +21,20 @@ async function parseError(response) {
   let detail = `Request failed with status ${response.status}`;
   try {
     const body = await response.json();
-    detail = body.detail || detail;
+    if (typeof body.detail === "string") {
+      detail = body.detail;
+    } else if (Array.isArray(body.detail)) {
+      const messages = body.detail
+        .map((item) => (typeof item === "string" ? item : item?.msg || item?.message || JSON.stringify(item)))
+        .filter(Boolean);
+      if (messages.length > 0) {
+        detail = messages.join("; ");
+      }
+    } else if (body.detail && typeof body.detail === "object") {
+      detail = body.detail.msg || body.detail.message || JSON.stringify(body.detail);
+    } else if (typeof body.message === "string") {
+      detail = body.message;
+    }
   } catch {
     // Keep the HTTP error when the backend does not return JSON.
   }
@@ -91,3 +104,8 @@ export function createPatientReminder(patientId, reminder) {
     body: JSON.stringify(reminder),
   });
 }
+
+export function getCareTeam(patientId) {
+  return request(`/patients/${patientId}/care-team`);
+}
+

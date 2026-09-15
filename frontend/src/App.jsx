@@ -1,12 +1,12 @@
-import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useNavigate, useOutletContext } from "react-router-dom";
 import { LoadingState } from "./components/caregiver/CaregiverWidgets";
 import CaregiverLayout from "./components/layout/CaregiverLayout";
 import useAuth from "./hooks/useAuth";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import ActivityPage from "./pages/caregiver/GameActivityPage";
+import CareTeamPage from "./pages/caregiver/CareTeamPage";
 import OverviewPage from "./pages/caregiver/OverviewPage";
-import PatientDetailPage from "./pages/caregiver/PatientDetailPage";
 import PatientsPage from "./pages/caregiver/PatientsPage";
 import PerformancePage from "./pages/caregiver/PerformancePage";
 import ProfilePage from "./pages/caregiver/ProfilePage";
@@ -15,6 +15,15 @@ import RemindersPage from "./pages/caregiver/RemindersPage";
 function ProtectedRoutes({ authenticated, caregiver, onSignOut }) {
   if (!authenticated) return <Navigate to="/login" replace />;
   return <Outlet context={{ caregiver, onSignOut }} />;
+}
+
+function AppIndex() {
+  const data = useOutletContext();
+  if (data.loading) return <LoadingState message="Loading your workspace…" />;
+  if (data.emptyPatients || !data.selectedId) {
+    return <Navigate to="/app/patients" replace />;
+  }
+  return <Navigate to={`/app/patients/${data.selectedId}`} replace />;
 }
 
 export default function App() {
@@ -32,12 +41,13 @@ export default function App() {
       <Route path="/login" element={<LoginPage authenticated={auth.status === "authenticated"} onSignIn={auth.signIn} />} />
       <Route element={<ProtectedRoutes authenticated={auth.status === "authenticated"} caregiver={auth.caregiver} onSignOut={signOut} />}>
         <Route path="/app" element={<CaregiverLayout caregiver={auth.caregiver} onSignOut={signOut} />}>
-          <Route index element={<OverviewPage />} />
+          <Route index element={<AppIndex />} />
           <Route path="patients" element={<PatientsPage />} />
-          <Route path="patients/:patientId" element={<PatientDetailPage />} />
+          <Route path="patients/:patientId" element={<OverviewPage />} />
           <Route path="patients/:patientId/performance" element={<PerformancePage />} />
           <Route path="patients/:patientId/activity" element={<ActivityPage />} />
           <Route path="patients/:patientId/reminders" element={<RemindersPage />} />
+          <Route path="patients/:patientId/care-team" element={<CareTeamPage />} />
           <Route path="profile" element={<ProfilePage caregiver={auth.caregiver} onSignOut={signOut} />} />
         </Route>
       </Route>

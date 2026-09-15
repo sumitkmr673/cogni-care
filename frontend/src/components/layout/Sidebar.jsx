@@ -2,21 +2,17 @@ import { NavLink, useLocation } from "react-router-dom";
 import { clearToken } from "../../api";
 import { Icon } from "../Icons";
 
-const sections = [
-  ["Overview", "/app", "grid"],
-  ["Patients", "/app/patients", "users"],
-  ["Performance", "/app/patients/current/performance", "trend"],
-  ["Game Activity", "/app/patients/current/activity", "game"],
-  ["Reminders", "/app/patients/current/reminders", "bell"],
-];
-
 export default function Sidebar({ patientId, caregiver, onSignOut }) {
   const location = useLocation();
-  const resolvedSections = sections.map(([label, path, icon]) => [
-    label,
-    patientId ? path.replace("/current", `/${patientId}`) : label === "Overview" || label === "Patients" ? path : "/app/patients",
-    icon,
-  ]);
+
+  const sections = [
+    { label: "Overview", path: patientId ? `/app/patients/${patientId}` : "/app/patients", icon: "grid", key: "overview" },
+    { label: "Patients", path: "/app/patients", icon: "users", key: "patients" },
+    { label: "Performance", path: patientId ? `/app/patients/${patientId}/performance` : "/app/patients", icon: "trend", key: "performance" },
+    { label: "Game Activity", path: patientId ? `/app/patients/${patientId}/activity` : "/app/patients", icon: "game", key: "activity" },
+    { label: "Reminders", path: patientId ? `/app/patients/${patientId}/reminders` : "/app/patients", icon: "bell", key: "reminders" },
+    { label: "Care Team", path: patientId ? `/app/patients/${patientId}/care-team` : "/app/patients", icon: "users", key: "care-team" },
+  ];
 
   function signOut() {
     clearToken();
@@ -28,14 +24,14 @@ export default function Sidebar({ patientId, caregiver, onSignOut }) {
       <div className="sidebar-brand"><div className="brand"><div className="brand-mark"><span /><span /><span /></div><div><strong>Cogni<span>-</span>Care</strong><small>Caregiver support</small></div></div></div>
       <nav className="sidebar-nav" aria-label="Caregiver navigation">
         <span className="sidebar-label">Caregiver portal</span>
-        {resolvedSections.map(([label, path, icon]) => (
+        {sections.map(({ label, path, icon, key }) => (
           <NavLink key={label} to={path} className={() => {
             const currentPath = location.pathname;
-            const isActive = label === "Overview"
-              ? currentPath === "/app"
-              : label === "Patients"
-                ? currentPath === "/app/patients" || /^\/app\/patients\/[^/]+$/.test(currentPath)
-                : currentPath.endsWith(`/${label === "Game Activity" ? "activity" : label.toLowerCase()}`);
+            const isActive = key === "overview"
+              ? currentPath === "/app" || (patientId && currentPath === `/app/patients/${patientId}`)
+              : key === "patients"
+                ? currentPath === "/app/patients"
+                : currentPath.endsWith(`/${key}`);
             return isActive ? "active" : "";
           }}>
             <Icon name={icon} size={17} />{label}
