@@ -1,6 +1,14 @@
+import os
 import unittest
 from datetime import datetime, timezone
 from uuid import uuid4
+
+os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret-32-bytes-long-123456")
+os.environ.setdefault("POSTGRES_USER", "sih2026")
+os.environ.setdefault("POSTGRES_PASSWORD", "sih2026_dev_snag")
+os.environ.setdefault("POSTGRES_HOST", "localhost")
+os.environ.setdefault("POSTGRES_PORT", "5432")
+os.environ.setdefault("POSTGRES_DB", "sih2026")
 
 from fastapi import HTTPException
 from pydantic import ValidationError

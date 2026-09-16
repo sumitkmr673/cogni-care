@@ -4,6 +4,11 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 os.environ.setdefault("JWT_SECRET_KEY", "test-only-secret")
+os.environ.setdefault("POSTGRES_USER", "sih2026")
+os.environ.setdefault("POSTGRES_PASSWORD", "sih2026_dev_snag")
+os.environ.setdefault("POSTGRES_HOST", "localhost")
+os.environ.setdefault("POSTGRES_PORT", "5432")
+os.environ.setdefault("POSTGRES_DB", "sih2026")
 
 from fastapi.testclient import TestClient
 from sqlalchemy import delete, select
@@ -109,7 +114,7 @@ class RealRoleAuthorizationTests(unittest.TestCase):
         headers = self._demo_headers()
         response = self.client.get(f"/patients/{self.patient_id}/care-team", headers=headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()["members"]), 2)
+        self.assertEqual(len(response.json()["members"]), 3)
         duplicate = self.client.post(
             f"/patients/{self.patient_id}/care-team",
             headers=headers,
@@ -134,14 +139,34 @@ class RealRoleAuthorizationTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_doctor_and_patient_care_team_access_is_forbidden(self):
-        doctor = self._headers(DEMO_DOCTOR_EMAIL, DEMO_DOCTOR_PASSWORD)
+    def test_patient_care_team_access_is_forbidden(self):
         patient = self._headers(DEMO_PATIENT_EMAIL, DEMO_PATIENT_PASSWORD)
-        for headers in (doctor, patient):
-            self.assertEqual(
-                self.client.get(f"/patients/{self.patient_id}/care-team", headers=headers).status_code,
-                403,
-            )
+        self.assertEqual(
+            self.client.get(f"/patients/{self.patient_id}/care-team", headers=patient).status_code,
+            403,
+        )
+
+    def test_assigned_doctor_can_view_care_team_but_cannot_modify(self):
+        doctor = self._headers(DEMO_DOCTOR_EMAIL, DEMO_DOCTOR_PASSWORD)
+        response = self.client.get(f"/patients/{self.patient_id}/care-team", headers=doctor)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["members"]), 3)
+        add_response = self.client.post(
+            f"/patients/{self.patient_id}/care-team",
+            headers=doctor,
+            json={"caregiver_id": self.caregiver_id, "is_primary": False},
+        )
+        self.assertEqual(add_response.status_code, 403)
+        transfer_response = self.client.put(
+            f"/patients/{self.patient_id}/care-team/{self.secondary_id}/primary",
+            headers=doctor,
+        )
+        self.assertEqual(transfer_response.status_code, 403)
+        remove_response = self.client.delete(
+            f"/patients/{self.patient_id}/care-team/{self.secondary_id}",
+            headers=doctor,
+        )
+        self.assertEqual(remove_response.status_code, 403)
 
     def test_second_primary_is_rejected(self):
         response = self.client.post(
@@ -184,16 +209,13 @@ class RealRoleAuthorizationTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
-    def test_patient_and_doctor_cannot_transfer_primary(self):
-        for headers in (
-            self._headers(DEMO_DOCTOR_EMAIL, DEMO_DOCTOR_PASSWORD),
-            self._headers(DEMO_PATIENT_EMAIL, DEMO_PATIENT_PASSWORD),
-        ):
-            response = self.client.put(
-                f"/patients/{self.patient_id}/care-team/{self.secondary_id}/primary",
-                headers=headers,
-            )
-            self.assertEqual(response.status_code, 403)
+    def test_patient_cannot_transfer_primary(self):
+        headers = self._headers(DEMO_PATIENT_EMAIL, DEMO_PATIENT_PASSWORD)
+        response = self.client.put(
+            f"/patients/{self.patient_id}/care-team/{self.secondary_id}/primary",
+            headers=headers,
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_primary_cannot_be_removed(self):
         response = self.client.delete(
@@ -208,23 +230,6 @@ class RealRoleAuthorizationTests(unittest.TestCase):
             headers=self._demo_headers(),
         )
         self.assertEqual(response.status_code, 204)
-
-    def test_doctor_cannot_start_or_submit_gameplay(self):
-        headers = self._headers(DEMO_DOCTOR_EMAIL, DEMO_DOCTOR_PASSWORD)
-        game_id = str(self.db.scalar(select(Game.id).order_by(Game.id)))
-        session_id = str(self.db.scalar(select(GameSession.id).where(GameSession.patient_id == self.patient_id)))
-        self.assertEqual(
-            self.client.post(f"/games/{game_id}/sessions", headers=headers, json={"difficulty_level": 1}).status_code,
-            403,
-        )
-        self.assertEqual(
-            self.client.post(
-                f"/games/sessions/{session_id}/result",
-                headers=headers,
-                json={"score": 1, "accuracy": 1},
-            ).status_code,
-            403,
-        )
 
     def test_patient_can_play_and_cannot_submit_another_patients_session(self):
         headers = self._headers(DEMO_PATIENT_EMAIL, DEMO_PATIENT_PASSWORD)

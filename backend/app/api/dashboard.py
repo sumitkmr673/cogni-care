@@ -16,6 +16,7 @@ from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
 from app.models.patient import Patient
+from app.models.patient_caregiver import PatientCaregiver
 from app.models.performance_metric import PerformanceMetric
 from app.models.reminder import Reminder
 from app.models.user import User
@@ -51,26 +52,13 @@ def list_patients(
     accessor: PatientAccessor = Depends(get_current_patient_accessor),
     db: Session = Depends(get_db),
 ) -> PatientsResponse:
-    if accessor.caregiver is not None:
-        from app.models.patient_caregiver import PatientCaregiver
-
-        rows = db.execute(
-            select(Patient, User.display_name)
-            .join(User, User.id == Patient.user_id)
-            .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
-            .where(PatientCaregiver.caregiver_id == accessor.caregiver.id)
-            .order_by(User.display_name, Patient.id)
-        ).all()
-    else:
-        from app.models.doctor_patient import DoctorPatient
-
-        rows = db.execute(
-            select(Patient, User.display_name)
-            .join(User, User.id == Patient.user_id)
-            .join(DoctorPatient, DoctorPatient.patient_id == Patient.id)
-            .where(DoctorPatient.doctor_id == accessor.doctor.id)
-            .order_by(User.display_name, Patient.id)
-        ).all()
+    rows = db.execute(
+        select(Patient, User.display_name)
+        .join(User, User.id == Patient.user_id)
+        .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
+        .where(PatientCaregiver.caregiver_id == accessor.caregiver.id)
+        .order_by(User.display_name, Patient.id)
+    ).all()
 
     return PatientsResponse(
         patients=[
@@ -100,19 +88,15 @@ def get_patient_dashboard(
     patient = get_accessible_patient_for_accessor(patient_id, accessor, db)
     display_name = db.scalar(select(User.display_name).where(User.id == patient.user_id))
 
-    relationship_row = None
-    if accessor.caregiver is not None:
-        from app.models.patient_caregiver import PatientCaregiver
-
-        relationship_row = db.execute(
-            select(PatientCaregiver, Caregiver, User.display_name)
-            .join(Caregiver, Caregiver.id == PatientCaregiver.caregiver_id)
-            .join(User, User.id == Caregiver.user_id)
-            .where(
-                PatientCaregiver.patient_id == patient_id,
-                PatientCaregiver.caregiver_id == accessor.caregiver.id,
-            )
-        ).one_or_none()
+    relationship_row = db.execute(
+        select(PatientCaregiver, Caregiver, User.display_name)
+        .join(Caregiver, Caregiver.id == PatientCaregiver.caregiver_id)
+        .join(User, User.id == Caregiver.user_id)
+        .where(
+            PatientCaregiver.patient_id == patient_id,
+            PatientCaregiver.caregiver_id == accessor.caregiver.id,
+        )
+    ).one_or_none()
 
     caregiver_relationship = None
     if relationship_row is not None:

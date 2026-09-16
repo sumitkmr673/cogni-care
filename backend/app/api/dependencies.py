@@ -9,12 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
-from app.models.user import User
 from app.models.caregiver import Caregiver
-from app.models.doctor import Doctor
-from app.models.doctor_patient import DoctorPatient
 from app.models.patient import Patient
 from app.models.patient_caregiver import PatientCaregiver
+from app.models.user import User
 from app.security import decode_access_token
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -23,8 +21,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 @dataclass(frozen=True)
 class PatientAccessor:
     role: str
-    caregiver: Caregiver | None = None
-    doctor: Doctor | None = None
+    caregiver: Caregiver
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -84,36 +81,10 @@ def get_current_caregiver(
     return caregiver
 
 
-def get_current_doctor(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-) -> Doctor:
-    if current_user.role != "DOCTOR":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Doctor access required",
-        )
-    doctor = db.scalar(select(Doctor).where(Doctor.user_id == current_user.id))
-    if doctor is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Doctor profile not found",
-        )
-    return doctor
-
-
 def get_current_patient_accessor(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    caregiver: Caregiver = Depends(get_current_caregiver),
 ) -> PatientAccessor:
-    if current_user.role == "CAREGIVER":
-        return PatientAccessor(role=current_user.role, caregiver=get_current_caregiver(current_user, db))
-    if current_user.role == "DOCTOR":
-        return PatientAccessor(role=current_user.role, doctor=get_current_doctor(current_user, db))
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Caregiver or doctor access required",
-    )
+    return PatientAccessor(role="CAREGIVER", caregiver=caregiver)
 
 
 def get_accessible_patient(
@@ -137,34 +108,9 @@ def get_accessible_patient(
     return patient
 
 
-def get_accessible_patient_for_doctor(
-    patient_id: UUID,
-    doctor: Doctor,
-    db: Session,
-) -> Patient:
-    patient = db.scalar(
-        select(Patient)
-        .join(DoctorPatient, DoctorPatient.patient_id == Patient.id)
-        .where(Patient.id == patient_id, DoctorPatient.doctor_id == doctor.id)
-    )
-    if patient is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Patient not found",
-        )
-    return patient
-
-
 def get_accessible_patient_for_accessor(
     patient_id: UUID,
     accessor: PatientAccessor,
     db: Session,
 ) -> Patient:
-    if accessor.caregiver is not None:
-        return get_accessible_patient(patient_id, accessor.caregiver, db)
-    if accessor.doctor is not None:
-        return get_accessible_patient_for_doctor(patient_id, accessor.doctor, db)
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Caregiver or doctor access required",
-    )
+    return get_accessible_patient(patient_id, accessor.caregiver, db)

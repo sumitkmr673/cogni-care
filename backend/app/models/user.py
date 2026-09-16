@@ -10,14 +10,13 @@ from app.db.session import Base
 
 if TYPE_CHECKING:
     from app.models.caregiver import Caregiver
-    from app.models.doctor import Doctor
     from app.models.patient import Patient
 
 
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (
-        CheckConstraint("role IN ('PATIENT', 'CAREGIVER', 'DOCTOR')", name="ck_users_role"),
+        CheckConstraint("role IN ('PATIENT', 'CAREGIVER')", name="ck_users_role"),
         UniqueConstraint("email", name="uq_users_email"),
     )
 
@@ -36,4 +35,3 @@ class User(Base):
 
     patient: Mapped["Patient | None"] = relationship(back_populates="user", uselist=False)
     caregiver: Mapped["Caregiver | None"] = relationship(back_populates="user", uselist=False)
-    doctor: Mapped["Doctor | None"] = relationship(back_populates="user", uselist=False)

@@ -1,6 +1,4 @@
 from app.models.caregiver import Caregiver
-from app.models.doctor import Doctor
-from app.models.doctor_patient import DoctorPatient
 from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
@@ -12,8 +10,6 @@ from app.models.user import User
 
 __all__ = [
     "Caregiver",
-    "Doctor",
-    "DoctorPatient",
     "Game",
     "GameResult",
     "GameSession",

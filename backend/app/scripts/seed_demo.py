@@ -10,8 +10,6 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.models.caregiver import Caregiver
-from app.models.doctor import Doctor
-from app.models.doctor_patient import DoctorPatient
 from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
@@ -80,14 +78,14 @@ DEMO_ACCOUNTS = (
         "email": DEMO_DOCTOR_EMAIL,
         "password": DEMO_DOCTOR_PASSWORD,
         "name": "Dr. Ananya Mehta (Demo)",
-        "role": "DOCTOR",
+        "role": "CAREGIVER",
     },
     {
         "id": UUID("d0000000-0000-0000-0000-000000000016"),
         "email": "demo.doctor.northeast@cogni-care.example",
         "password": "DemoNortheastDoctor-2026!",
         "name": "Dr. Tashi Norbu (Demo)",
-        "role": "DOCTOR",
+        "role": "CAREGIVER",
     },
     {
         "id": UUID("d0000000-0000-0000-0000-000000000021"),
@@ -138,15 +136,14 @@ PATIENT_IDS = {
 CAREGIVER_IDS = {
     DEMO_CAREGIVER_EMAIL: DEMO_CAREGIVER_ID,
     DEMO_SECONDARY_CAREGIVER_EMAIL: DEMO_SECONDARY_CAREGIVER_ID,
+    DEMO_DOCTOR_EMAIL: DEMO_DOCTOR_ID,
     "demo.caregiver.northeast@cogni-care.example": UUID("d0000000-0000-0000-0000-000000000007"),
     "demo.caregiver.community@cogni-care.example": UUID("d0000000-0000-0000-0000-000000000008"),
-}
-DOCTOR_IDS = {
-    DEMO_DOCTOR_EMAIL: DEMO_DOCTOR_ID,
     "demo.doctor.northeast@cogni-care.example": UUID("d0000000-0000-0000-0000-000000000009"),
 }
 
 CAREGIVER_ASSIGNMENTS = (
+    # Primary & secondary family/professional caregiver assignments
     (DEMO_PATIENT_EMAIL, DEMO_CAREGIVER_EMAIL, True),
     (DEMO_PATIENT_EMAIL, DEMO_SECONDARY_CAREGIVER_EMAIL, False),
     ("demo.patient.assam@cogni-care.example", DEMO_CAREGIVER_EMAIL, True),
@@ -155,15 +152,13 @@ CAREGIVER_ASSIGNMENTS = (
     ("demo.patient.sikkim@cogni-care.example", DEMO_SECONDARY_CAREGIVER_EMAIL, False),
     ("demo.patient.mizoram@cogni-care.example", "demo.caregiver.community@cogni-care.example", True),
     ("demo.patient.mizoram@cogni-care.example", "demo.caregiver.northeast@cogni-care.example", False),
-)
-
-DOCTOR_ASSIGNMENTS = (
-    (DEMO_DOCTOR_EMAIL, DEMO_PATIENT_EMAIL),
-    (DEMO_DOCTOR_EMAIL, "demo.patient.assam@cogni-care.example"),
-    (DEMO_DOCTOR_EMAIL, "demo.patient.mizoram@cogni-care.example"),
-    ("demo.doctor.northeast@cogni-care.example", "demo.patient.assam@cogni-care.example"),
-    ("demo.doctor.northeast@cogni-care.example", "demo.patient.sikkim@cogni-care.example"),
-    ("demo.doctor.northeast@cogni-care.example", "demo.patient.mizoram@cogni-care.example"),
+    # Doctor caregiver assignments (secondary caregiver access)
+    (DEMO_PATIENT_EMAIL, DEMO_DOCTOR_EMAIL, False),
+    ("demo.patient.assam@cogni-care.example", DEMO_DOCTOR_EMAIL, False),
+    ("demo.patient.mizoram@cogni-care.example", DEMO_DOCTOR_EMAIL, False),
+    ("demo.patient.assam@cogni-care.example", "demo.doctor.northeast@cogni-care.example", False),
+    ("demo.patient.sikkim@cogni-care.example", "demo.doctor.northeast@cogni-care.example", False),
+    ("demo.patient.mizoram@cogni-care.example", "demo.doctor.northeast@cogni-care.example", False),
 )
 
 
@@ -176,7 +171,6 @@ def _delete_existing_demo_data(db: Session) -> None:
     user_ids = list(db.scalars(select(User.id).where(User.email.in_(emails))))
     patient_ids = list(db.scalars(select(Patient.id).where(Patient.user_id.in_(user_ids))))
     caregiver_ids = list(db.scalars(select(Caregiver.id).where(Caregiver.user_id.in_(user_ids))))
-    doctor_ids = list(db.scalars(select(Doctor.id).where(Doctor.user_id.in_(user_ids))))
 
     if patient_ids:
         session_ids = select(GameSession.id).where(GameSession.patient_id.in_(patient_ids))
@@ -184,15 +178,11 @@ def _delete_existing_demo_data(db: Session) -> None:
         db.execute(delete(GameSession).where(GameSession.patient_id.in_(patient_ids)))
         db.execute(delete(PerformanceMetric).where(PerformanceMetric.patient_id.in_(patient_ids)))
         db.execute(delete(Reminder).where(Reminder.patient_id.in_(patient_ids)))
-        db.execute(delete(DoctorPatient).where(DoctorPatient.patient_id.in_(patient_ids)))
         db.execute(delete(PatientCaregiver).where(PatientCaregiver.patient_id.in_(patient_ids)))
         db.execute(delete(Patient).where(Patient.id.in_(patient_ids)))
     if caregiver_ids:
         db.execute(delete(PatientCaregiver).where(PatientCaregiver.caregiver_id.in_(caregiver_ids)))
         db.execute(delete(Caregiver).where(Caregiver.id.in_(caregiver_ids)))
-    if doctor_ids:
-        db.execute(delete(DoctorPatient).where(DoctorPatient.doctor_id.in_(doctor_ids)))
-        db.execute(delete(Doctor).where(Doctor.id.in_(doctor_ids)))
     if user_ids:
         db.execute(delete(User).where(User.id.in_(user_ids)))
     db.flush()
@@ -214,7 +204,15 @@ def _seed_games(db: Session) -> dict[str, Game]:
     return games
 
 
-def _seed_accounts(db: Session) -> tuple[dict[str, User], dict[str, Patient], dict[str, Caregiver], dict[str, Doctor]]:
+def _get_caregiver_type(email: str) -> str:
+    if "doctor" in email:
+        return "DOCTOR"
+    if email in (DEMO_CAREGIVER_EMAIL, "demo.caregiver.community@cogni-care.example"):
+        return "FAMILY"
+    return "PROFESSIONAL_CAREGIVER"
+
+
+def _seed_accounts(db: Session) -> tuple[dict[str, User], dict[str, Patient], dict[str, Caregiver]]:
     users: dict[str, User] = {}
     for account in DEMO_ACCOUNTS:
         user = User(
@@ -233,14 +231,10 @@ def _seed_accounts(db: Session) -> tuple[dict[str, User], dict[str, Patient], di
         email: Caregiver(
             id=CAREGIVER_IDS[email],
             user_id=users[email].id,
-            caregiver_type="FAMILY" if email in (DEMO_CAREGIVER_EMAIL, "demo.caregiver.community@cogni-care.example") else "PROFESSIONAL_CAREGIVER",
+            caregiver_type=_get_caregiver_type(email),
             phone=f"+91-90000000{index:02d}",
         )
         for index, email in enumerate(CAREGIVER_IDS, start=1)
-    }
-    doctors = {
-        email: Doctor(id=DOCTOR_IDS[email], user_id=users[email].id)
-        for email in DOCTOR_IDS
     }
     patients = {
         email: Patient(
@@ -253,16 +247,15 @@ def _seed_accounts(db: Session) -> tuple[dict[str, User], dict[str, Patient], di
         )
         for email in PROFILE_DATA
     }
-    db.add_all([*caregivers.values(), *doctors.values(), *patients.values()])
+    db.add_all([*caregivers.values(), *patients.values()])
     db.flush()
-    return users, patients, caregivers, doctors
+    return users, patients, caregivers
 
 
 def _seed_relationships(
     db: Session,
     patients: dict[str, Patient],
     caregivers: dict[str, Caregiver],
-    doctors: dict[str, Doctor],
 ) -> None:
     for patient_email, caregiver_email, is_primary in CAREGIVER_ASSIGNMENTS:
         db.add(
@@ -270,13 +263,6 @@ def _seed_relationships(
                 patient_id=patients[patient_email].id,
                 caregiver_id=caregivers[caregiver_email].id,
                 is_primary=is_primary,
-            )
-        )
-    for doctor_email, patient_email in DOCTOR_ASSIGNMENTS:
-        db.add(
-            DoctorPatient(
-                doctor_id=doctors[doctor_email].id,
-                patient_id=patients[patient_email].id,
             )
         )
     db.flush()
@@ -417,8 +403,8 @@ def seed_demo_data() -> tuple[UUID, UUID]:
     try:
         _delete_existing_demo_data(db)
         games = _seed_games(db)
-        _, patients, caregivers, doctors = _seed_accounts(db)
-        _seed_relationships(db, patients, caregivers, doctors)
+        _, patients, caregivers = _seed_accounts(db)
+        _seed_relationships(db, patients, caregivers)
         today = datetime.now(timezone.utc).date()
         _seed_activity(db, games, patients, today)
         _seed_reminders(db, patients, today)
