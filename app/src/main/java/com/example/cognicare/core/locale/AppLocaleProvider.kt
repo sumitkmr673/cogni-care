@@ -1,7 +1,10 @@
 package com.example.cognicare.core.locale
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.res.AssetManager
 import android.content.res.Configuration
+import android.content.res.Resources
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -69,8 +72,11 @@ fun LocalizedContent(
             setLocale(locale)
         }
     }
-    val localizedContext = remember(language, configuration) {
-        context.createConfigurationContext(configuration)
+    val localizedContext = remember(context, configuration) {
+        LocalizedContextWrapper(
+            base = context,
+            localizedContext = context.createConfigurationContext(configuration)
+        )
     }
 
     CompositionLocalProvider(
@@ -78,4 +84,12 @@ fun LocalizedContent(
         LocalContext provides localizedContext,
         content = content
     )
+}
+
+private class LocalizedContextWrapper(
+    base: Context,
+    private val localizedContext: Context
+) : ContextWrapper(base) {
+    override fun getResources(): Resources = localizedContext.resources
+    override fun getAssets(): AssetManager = localizedContext.assets
 }
