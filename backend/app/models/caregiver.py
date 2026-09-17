@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+from app.identifiers import generate_caregiver_public_id
 
 if TYPE_CHECKING:
     from app.models.patient import Patient
@@ -28,6 +29,9 @@ class Caregiver(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
+    public_id: Mapped[str] = mapped_column(
+        String(20), unique=True, index=True, nullable=False, default=generate_caregiver_public_id
+    )
     caregiver_type: Mapped[str] = mapped_column(String(50), nullable=False)
     phone: Mapped[str | None] = mapped_column(String(30))
     created_at: Mapped[datetime] = mapped_column(
@@ -36,6 +40,11 @@ class Caregiver(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+    def __init__(self, **kwargs):
+        if "public_id" not in kwargs:
+            kwargs["public_id"] = generate_caregiver_public_id()
+        super().__init__(**kwargs)
 
     user: Mapped["User"] = relationship(back_populates="caregiver")
     patient_links: Mapped[list["PatientCaregiver"]] = relationship(

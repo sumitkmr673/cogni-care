@@ -142,6 +142,22 @@ CAREGIVER_IDS = {
     "demo.doctor.northeast@cogni-care.example": UUID("d0000000-0000-0000-0000-000000000009"),
 }
 
+CAREGIVER_PUBLIC_IDS = {
+    DEMO_CAREGIVER_EMAIL: "CG-DEMO0001",
+    DEMO_SECONDARY_CAREGIVER_EMAIL: "CG-DEMO0002",
+    "demo.caregiver.northeast@cogni-care.example": "CG-DEMO0003",
+    "demo.caregiver.community@cogni-care.example": "CG-DEMO0004",
+    DEMO_DOCTOR_EMAIL: "CG-DOCTOR01",
+    "demo.doctor.northeast@cogni-care.example": "CG-DOCTOR02",
+}
+
+PATIENT_PUBLIC_IDS = {
+    DEMO_PATIENT_EMAIL: "PT-DEMO0001",
+    "demo.patient.assam@cogni-care.example": "PT-DEMO0002",
+    "demo.patient.sikkim@cogni-care.example": "PT-DEMO0003",
+    "demo.patient.mizoram@cogni-care.example": "PT-DEMO0004",
+}
+
 CAREGIVER_ASSIGNMENTS = (
     # Primary & secondary family/professional caregiver assignments
     (DEMO_PATIENT_EMAIL, DEMO_CAREGIVER_EMAIL, True),
@@ -230,6 +246,7 @@ def _seed_accounts(db: Session) -> tuple[dict[str, User], dict[str, Patient], di
     caregivers = {
         email: Caregiver(
             id=CAREGIVER_IDS[email],
+            public_id=CAREGIVER_PUBLIC_IDS.get(email, f"CG-DEMO{index:04d}"),
             user_id=users[email].id,
             caregiver_type=_get_caregiver_type(email),
             phone=f"+91-90000000{index:02d}",
@@ -239,6 +256,7 @@ def _seed_accounts(db: Session) -> tuple[dict[str, User], dict[str, Patient], di
     patients = {
         email: Patient(
             id=PATIENT_IDS[email],
+            public_id=PATIENT_PUBLIC_IDS[email],
             user_id=users[email].id,
             date_of_birth=PROFILE_DATA[email][0],
             gender=PROFILE_DATA[email][1],

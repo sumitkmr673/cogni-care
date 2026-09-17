@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import (
@@ -11,6 +12,7 @@ from app.api.dependencies import (
     get_current_patient_accessor,
     get_db,
 )
+from app.identifiers import generate_patient_public_id
 from app.models.caregiver import Caregiver
 from app.models.game import Game
 from app.models.game_result import GameResult
@@ -23,6 +25,8 @@ from app.models.user import User
 from app.schemas.dashboard import (
     CaregiverRelationship,
     DashboardResponse,
+    PatientCreateRequest,
+    PatientLinkRequest,
     PatientProfile,
     PatientSummary,
     PatientsResponse,
@@ -64,6 +68,7 @@ def list_patients(
         patients=[
             PatientSummary(
                 id=patient.id,
+                public_id=patient.public_id,
                 display_name=display_name,
                 preferred_language=patient.preferred_language,
                 timezone=patient.timezone,
@@ -71,6 +76,132 @@ def list_patients(
             )
             for patient, display_name in rows
         ]
+    )
+
+
+@router.post(
+    "/patients",
+    response_model=PatientProfile,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new patient and become their primary caregiver",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+def create_patient(
+    payload: PatientCreateRequest,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> PatientProfile:
+    user = User(
+        display_name=payload.display_name.strip(),
+        role="PATIENT",
+        is_active=True,
+    )
+    db.add(user)
+    db.flush()
+
+    public_id = None
+    for _ in range(10):
+        candidate = generate_patient_public_id()
+        exists = db.scalar(select(Patient.id).where(Patient.public_id == candidate))
+        if not exists:
+            public_id = candidate
+            break
+    if not public_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate unique patient public ID",
+        )
+
+    patient = Patient(
+        user_id=user.id,
+        public_id=public_id,
+        date_of_birth=payload.date_of_birth,
+        gender=payload.gender,
+        preferred_language=payload.preferred_language,
+        timezone=payload.timezone,
+        profile_photo_ref=payload.profile_photo_ref,
+    )
+    db.add(patient)
+    db.flush()
+
+    link = PatientCaregiver(
+        patient_id=patient.id,
+        caregiver_id=caregiver.id,
+        is_primary=True,
+    )
+    db.add(link)
+    db.commit()
+    db.refresh(patient)
+
+    return PatientProfile(
+        id=patient.id,
+        public_id=patient.public_id,
+        display_name=user.display_name,
+        preferred_language=patient.preferred_language,
+        timezone=patient.timezone,
+        profile_photo_ref=patient.profile_photo_ref,
+        date_of_birth=patient.date_of_birth,
+        gender=patient.gender,
+    )
+
+
+@router.post(
+    "/patients/link",
+    response_model=PatientProfile,
+    status_code=status.HTTP_200_OK,
+    summary="Link an existing patient by public ID as a secondary caregiver",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+def link_patient(
+    payload: PatientLinkRequest,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> PatientProfile:
+    normalized_public_id = payload.public_id.strip().upper()
+    patient = db.scalar(select(Patient).where(Patient.public_id == normalized_public_id))
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found with the provided public ID",
+        )
+
+    existing_link = db.scalar(
+        select(PatientCaregiver).where(
+            PatientCaregiver.patient_id == patient.id,
+            PatientCaregiver.caregiver_id == caregiver.id,
+        )
+    )
+    if existing_link is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Patient is already linked to this caregiver",
+        )
+
+    link = PatientCaregiver(
+        patient_id=patient.id,
+        caregiver_id=caregiver.id,
+        is_primary=False,
+    )
+    db.add(link)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Patient is already linked to this caregiver",
+        ) from None
+
+    user = db.scalar(select(User).where(User.id == patient.user_id))
+    return PatientProfile(
+        id=patient.id,
+        public_id=patient.public_id,
+        display_name=user.display_name if user else "",
+        preferred_language=patient.preferred_language,
+        timezone=patient.timezone,
+        profile_photo_ref=patient.profile_photo_ref,
+        date_of_birth=patient.date_of_birth,
+        gender=patient.gender,
     )
 
 
@@ -103,6 +234,7 @@ def get_patient_dashboard(
         link, caregiver, caregiver_name = relationship_row
         caregiver_relationship = CaregiverRelationship(
             caregiver_id=caregiver.id,
+            public_id=caregiver.public_id,
             display_name=caregiver_name,
             caregiver_type=caregiver.caregiver_type,
             is_primary=link.is_primary,
@@ -163,6 +295,7 @@ def get_patient_dashboard(
     return DashboardResponse(
         patient=PatientProfile(
             id=patient.id,
+            public_id=patient.public_id,
             display_name=display_name,
             preferred_language=patient.preferred_language,
             timezone=patient.timezone,

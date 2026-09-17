@@ -51,6 +51,7 @@ def get_care_team(
         members=[
             CareTeamMember(
                 caregiver_id=linked_caregiver.id,
+                public_id=linked_caregiver.public_id,
                 display_name=name,
                 caregiver_type=linked_caregiver.caregiver_type,
                 is_primary=link.is_primary,
@@ -73,11 +74,20 @@ def add_care_team_member(
     db: Session = Depends(get_db),
 ) -> CareTeamMember:
     _primary_patient(patient_id, caregiver, db)
-    assigned = db.scalar(
-        select(Caregiver)
-        .join(User, User.id == Caregiver.user_id)
-        .where(Caregiver.id == assignment.caregiver_id, User.role == "CAREGIVER")
-    )
+
+    if not assignment.caregiver_public_id and not assignment.caregiver_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Either caregiver_public_id or caregiver_id must be provided",
+        )
+
+    query = select(Caregiver).join(User, User.id == Caregiver.user_id).where(User.role == "CAREGIVER")
+    if assignment.caregiver_public_id:
+        query = query.where(Caregiver.public_id == assignment.caregiver_public_id.strip().upper())
+    else:
+        query = query.where(Caregiver.id == assignment.caregiver_id)
+
+    assigned = db.scalar(query)
     if assigned is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Caregiver not found")
     existing = db.scalar(
@@ -111,6 +121,7 @@ def add_care_team_member(
     name = db.scalar(select(User.display_name).where(User.id == assigned.user_id))
     return CareTeamMember(
         caregiver_id=assigned.id,
+        public_id=assigned.public_id,
         display_name=name,
         caregiver_type=assigned.caregiver_type,
         is_primary=link.is_primary,
@@ -154,6 +165,7 @@ def transfer_primary_caregiver(
     name = db.scalar(select(User.display_name).where(User.id == assigned.user_id))
     return CareTeamMember(
         caregiver_id=assigned.id,
+        public_id=assigned.public_id,
         display_name=name,
         caregiver_type=assigned.caregiver_type,
         is_primary=True,

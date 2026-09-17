@@ -1,11 +1,12 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PatientSummary(BaseModel):
     id: UUID
+    public_id: str
     display_name: str
     preferred_language: str | None
     timezone: str | None
@@ -17,8 +18,22 @@ class PatientProfile(PatientSummary):
     gender: str | None
 
 
+class PatientCreateRequest(BaseModel):
+    display_name: str = Field(min_length=1, max_length=150)
+    date_of_birth: date | None = None
+    gender: str | None = Field(default=None, max_length=50)
+    preferred_language: str | None = Field(default="English", max_length=50)
+    timezone: str | None = Field(default="Asia/Kolkata", max_length=100)
+    profile_photo_ref: str | None = Field(default=None, max_length=500)
+
+
+class PatientLinkRequest(BaseModel):
+    public_id: str = Field(min_length=1, max_length=30)
+
+
 class CaregiverRelationship(BaseModel):
     caregiver_id: UUID
+    public_id: str | None = None
     display_name: str
     caregiver_type: str
     is_primary: bool
@@ -26,6 +41,7 @@ class CaregiverRelationship(BaseModel):
 
 class CareTeamMember(BaseModel):
     caregiver_id: UUID
+    public_id: str | None = None
     display_name: str
     caregiver_type: str
     is_primary: bool
@@ -37,7 +53,8 @@ class CareTeamResponse(BaseModel):
 
 
 class CareTeamAssignmentRequest(BaseModel):
-    caregiver_id: UUID
+    caregiver_public_id: str | None = None
+    caregiver_id: UUID | None = None
     is_primary: bool = False
 
 

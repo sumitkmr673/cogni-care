@@ -15,6 +15,7 @@ from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 from app.api.auth import current_user, login
 from app.api.dependencies import get_current_user
+from app.models.caregiver import Caregiver
 from app.models.user import User
 from app.security import (
     create_access_token,
@@ -24,10 +25,13 @@ from app.security import (
 
 
 class FakeSession:
-    def __init__(self, user: User | None):
+    def __init__(self, user: User | None, caregiver: Caregiver | None = None):
         self.user = user
+        self.caregiver = caregiver
 
     def scalar(self, statement):
+        if "caregivers" in str(statement):
+            return self.caregiver
         return self.user
 
     def close(self):
@@ -50,9 +54,17 @@ class AuthenticationTests(unittest.TestCase):
             role="CAREGIVER",
             is_active=True,
         )
+        caregiver = Caregiver(
+            id=uuid4(),
+            user_id=user.id,
+            caregiver_type="FAMILY",
+            public_id="CG-DEMO1234",
+            phone="+91-9876543210",
+        )
+        session = FakeSession(user, caregiver)
         response = login(
             type("Credentials", (), {"email": "demo@example.com", "password": "secret"})(),
-            FakeSession(user),
+            session,
         )
         self.assertEqual(response.token_type, "bearer")
         token = response.access_token
@@ -60,10 +72,12 @@ class AuthenticationTests(unittest.TestCase):
         me = current_user(
             get_current_user(
                 HTTPAuthorizationCredentials(scheme="Bearer", credentials=token),
-                FakeSession(user),
-            )
+                session,
+            ),
+            db=session,
         )
         self.assertEqual(me.email, "demo@example.com")
+        self.assertEqual(me.public_id, "CG-DEMO1234")
 
     def test_invalid_password_and_expired_token(self):
         user = User(
