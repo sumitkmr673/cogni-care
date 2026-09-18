@@ -1,5 +1,8 @@
 function chartPoints(metrics, key, width, height, padding) {
-  const values = metrics.map((metric) => Number(metric[key])).filter(Number.isFinite);
+  const values = metrics
+    .filter((metric) => metric[key] != null && metric[key] !== "")
+    .map((metric) => Number(metric[key]))
+    .filter(Number.isFinite);
   if (!values.length) return { points: "", values: [] };
   const min = Math.min(...values);
   const max = Math.max(...values);

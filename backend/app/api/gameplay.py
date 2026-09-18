@@ -19,6 +19,7 @@ from app.schemas.gameplay import (
     StartGameSessionRequest,
     SubmitGameResultRequest,
 )
+from app.services.performance import record_daily_performance_metric
 
 router = APIRouter(tags=["patient gameplay"])
 
@@ -142,6 +143,8 @@ def submit_game_result(
     session.status = "COMPLETED"
     session.completed_at = datetime.now(timezone.utc)
     db.add(result)
+    db.flush()
+    record_daily_performance_metric(db, session=session, patient=patient)
     db.commit()
     db.refresh(result)
     db.refresh(session)

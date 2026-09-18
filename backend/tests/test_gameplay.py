@@ -22,6 +22,7 @@ from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
 from app.models.patient import Patient
+from app.models.performance_metric import PerformanceMetric
 from app.models.user import User
 from app.security import create_access_token, hash_password
 
@@ -60,6 +61,14 @@ class FakeScalars:
         return self._items
 
 
+class FakeResult:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def all(self):
+        return self._rows
+
+
 class FakeGameplaySession:
     def __init__(self, store: "GameplayStore"):
         self.store = store
@@ -85,6 +94,10 @@ class FakeGameplaySession:
             if obj.id is None:
                 obj.id = uuid4()
             self.store.results[obj.session_id] = obj
+        elif isinstance(obj, PerformanceMetric):
+            if obj.id is None:
+                obj.id = uuid4()
+            self.store.metrics[obj.id] = obj
 
     def scalar(self, statement):
         names = _selected_names(statement)
@@ -102,7 +115,26 @@ class FakeGameplaySession:
             return self.store.sessions.get(filters.get("game_sessions.id"))
         if names == ("GameResult",):
             return self.store.results.get(filters.get("game_results.session_id"))
+        if "count" in names or names == ("count",):
+            return len(self.store.sessions)
+        if names == ("PerformanceMetric",):
+            return None
         return None
+
+    def execute(self, statement):
+        names = _selected_names(statement)
+        if "category" in names or "id" in names:
+            rows = []
+            for session in self.store.sessions.values():
+                if session.status == "COMPLETED":
+                    game = self.store.games.get(session.game_id)
+                    res = self.store.results.get(session.id)
+                    if game and res:
+                        from collections import namedtuple
+                        Row = namedtuple("Row", ["id", "category", "accuracy", "response_time_ms"])
+                        rows.append(Row(session.id, game.category, res.accuracy, res.response_time_ms))
+            return FakeResult(rows)
+        return FakeResult([])
 
     def scalars(self, statement):
         names = _selected_names(statement)
@@ -121,6 +153,7 @@ class GameplayStore:
         self.games: dict = {}
         self.sessions: dict = {}
         self.results: dict = {}
+        self.metrics: dict = {}
 
     def add_user(self, user: User) -> User:
         self.users[user.id] = user
