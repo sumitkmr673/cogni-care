@@ -1,0 +1,6 @@
+# The web layer. Enough to run the tests (with requirements-dev.txt) on any machine.
+fastapi>=0.115
+uvicorn>=0.30
+python-multipart>=0.0.9
+PyJWT>=2.9
+pydantic>=2.7
