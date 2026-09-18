@@ -105,6 +105,26 @@ export function createPatientReminder(patientId, reminder) {
   });
 }
 
+export function updatePatientReminder(patientId, reminderId, reminder) {
+  return request(`/patients/${patientId}/reminders/${reminderId}`, {
+    method: "PATCH",
+    body: JSON.stringify(reminder),
+  });
+}
+
+export function deletePatientReminder(patientId, reminderId) {
+  return request(`/patients/${patientId}/reminders/${reminderId}`, {
+    method: "DELETE",
+  });
+}
+
+export function togglePatientReminderStatus(patientId, reminderId, isActive) {
+  return request(`/patients/${patientId}/reminders/${reminderId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_active: isActive }),
+  });
+}
+
 export async function registerCaregiver(payload) {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
     method: "POST",

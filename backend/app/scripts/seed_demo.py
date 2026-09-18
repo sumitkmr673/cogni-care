@@ -378,33 +378,55 @@ def _seed_activity(
             )
 
 
-def _seed_reminders(db: Session, patients: dict[str, Patient], today: date) -> None:
+def _seed_reminders(
+    db: Session,
+    patients: dict[str, Patient],
+    caregivers: dict[str, Caregiver],
+    today: date,
+) -> None:
+    assignments: dict[str, dict[str, Caregiver]] = {}
+    for patient_email, caregiver_email, is_primary in CAREGIVER_ASSIGNMENTS:
+        if patient_email not in assignments:
+            assignments[patient_email] = {}
+        if is_primary:
+            assignments[patient_email]["primary"] = caregivers[caregiver_email]
+        elif "secondary" not in assignments[patient_email] or caregiver_email == DEMO_SECONDARY_CAREGIVER_EMAIL:
+            assignments[patient_email]["secondary"] = caregivers[caregiver_email]
+
     reminder_sets = (
         (
-            ("Complete today's memory game", "GAME", 1, True, "FREQ=DAILY"),
-            ("Morning walk with family", "ACTIVITY", 2, True, "FREQ=WEEKLY"),
-            ("Care review appointment", "APPOINTMENT", 7, True, None),
+            ("Complete today's memory game", "GAME", 1, True, "FREQ=DAILY", "primary"),
+            ("Morning walk with family", "ACTIVITY", 2, True, "FREQ=WEEKLY", "primary"),
+            ("Care review appointment", "APPOINTMENT", 7, True, None, "secondary"),
         ),
         (
-            ("Practice family picture recall", "GAME", 1, True, None),
-            ("Medication check-in", "MEDICATION", 3, True, "FREQ=DAILY"),
-            ("Previous orientation reminder", "ACTIVITY", -4, False, None),
+            ("Practice family picture recall", "GAME", 1, True, None, "primary"),
+            ("Medication check-in", "MEDICATION", 3, True, "FREQ=DAILY", "secondary"),
+            ("Previous orientation reminder", "ACTIVITY", -4, False, None, "primary"),
         ),
         (
-            ("Object matching practice", "GAME", 2, True, "FREQ=DAILY"),
-            ("Community activity", "ACTIVITY", 5, True, None),
-            ("Doctor follow-up", "APPOINTMENT", 12, True, None),
+            ("Object matching practice", "GAME", 2, True, "FREQ=DAILY", "primary"),
+            ("Community activity", "ACTIVITY", 5, True, None, "primary"),
+            ("Doctor follow-up", "APPOINTMENT", 12, True, None, "secondary"),
         ),
         (
-            ("Monthly care review", "APPOINTMENT", 18, True, None),
-            ("Previous game reminder", "GAME", -8, False, None),
+            ("Monthly care review", "APPOINTMENT", 18, True, None, "primary"),
+            ("Previous game reminder", "GAME", -8, False, None, "primary"),
         ),
     )
     for patient_index, (patient_email, patient) in enumerate(patients.items()):
-        for title, reminder_type, offset, active, recurrence_rule in reminder_sets[patient_index]:
+        patient_caregiver_map = assignments.get(patient_email, {})
+        default_cg = (
+            patient_caregiver_map.get("primary")
+            or patient_caregiver_map.get("secondary")
+            or next(iter(caregivers.values()))
+        )
+        for title, reminder_type, offset, active, recurrence_rule, owner_role in reminder_sets[patient_index]:
+            creator = patient_caregiver_map.get(owner_role) or default_cg
             db.add(
                 Reminder(
                     patient_id=patient.id,
+                    created_by_caregiver_id=creator.id,
                     title=title,
                     description="Development dataset reminder for caregiver workflow testing.",
                     reminder_type=reminder_type,
@@ -425,7 +447,7 @@ def seed_demo_data() -> tuple[UUID, UUID]:
         _seed_relationships(db, patients, caregivers)
         today = datetime.now(timezone.utc).date()
         _seed_activity(db, games, patients, today)
-        _seed_reminders(db, patients, today)
+        _seed_reminders(db, patients, caregivers, today)
         db.commit()
         return caregivers[DEMO_CAREGIVER_EMAIL].id, patients[DEMO_PATIENT_EMAIL].id
     except Exception:

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import (
     PatientAccessor,
+    get_accessible_patient,
     get_accessible_patient_for_accessor,
     get_current_caregiver,
     get_current_patient_accessor,
@@ -36,7 +37,11 @@ from app.schemas.dashboard import (
     ReminderItem,
     SessionResult,
 )
-from app.schemas.reminder import ReminderCreateRequest
+from app.schemas.reminder import (
+    ReminderCreateRequest,
+    ReminderStatusUpdateRequest,
+    ReminderUpdateRequest,
+)
 
 router = APIRouter(tags=["caregiver dashboard"])
 
@@ -288,14 +293,17 @@ def get_patient_dashboard(
         .limit(1)
     )
 
-    reminders = db.scalars(
-        select(Reminder)
+    reminder_rows = db.execute(
+        select(Reminder, Caregiver.public_id, User.display_name)
+        .join(Caregiver, Caregiver.id == Reminder.created_by_caregiver_id)
+        .join(User, User.id == Caregiver.user_id)
         .where(
             Reminder.patient_id == patient_id,
             Reminder.is_active.is_(True),
             Reminder.scheduled_at >= func.now(),
         )
         .order_by(Reminder.scheduled_at)
+        .limit(5)
     ).all()
 
     return DashboardResponse(
@@ -315,16 +323,8 @@ def get_patient_dashboard(
             PerformancePoint.model_validate(latest_metric) if latest_metric is not None else None
         ),
         active_reminders=[
-            ReminderItem(
-                id=reminder.id,
-                title=reminder.title,
-                description=reminder.description,
-                reminder_type=reminder.reminder_type,
-                scheduled_at=reminder.scheduled_at,
-                is_recurring=reminder.is_recurring,
-                recurrence_rule=reminder.recurrence_rule,
-            )
-            for reminder in reminders
+            _reminder_response(reminder, pub_id, name)
+            for reminder, pub_id, name in reminder_rows
         ],
     )
 
@@ -427,6 +427,69 @@ def get_patient_trends(
     )
 
 
+def _reminder_response(
+    reminder: Reminder,
+    creator_public_id: str | None = None,
+    creator_display_name: str | None = None,
+) -> ReminderItem:
+    return ReminderItem(
+        id=reminder.id,
+        title=reminder.title,
+        description=reminder.description,
+        reminder_type=reminder.reminder_type,
+        scheduled_at=reminder.scheduled_at,
+        is_recurring=reminder.is_recurring,
+        recurrence_rule=reminder.recurrence_rule,
+        is_active=reminder.is_active,
+        created_at=reminder.created_at,
+        created_by_caregiver_public_id=creator_public_id,
+        created_by_display_name=creator_display_name,
+    )
+
+
+def _get_reminder_with_auth(
+    patient_id: UUID,
+    reminder_id: UUID,
+    caregiver: Caregiver,
+    db: Session,
+    require_manage: bool = False,
+) -> tuple[Reminder, str, str | None]:
+    get_accessible_patient(patient_id, caregiver, db)
+
+    row = db.execute(
+        select(Reminder, Caregiver.public_id, User.display_name)
+        .join(Caregiver, Caregiver.id == Reminder.created_by_caregiver_id)
+        .join(User, User.id == Caregiver.user_id)
+        .where(Reminder.id == reminder_id, Reminder.patient_id == patient_id)
+    ).first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reminder not found",
+        )
+
+    reminder, creator_public_id, creator_name = row
+
+    if require_manage:
+        link = db.scalar(
+            select(PatientCaregiver).where(
+                PatientCaregiver.patient_id == patient_id,
+                PatientCaregiver.caregiver_id == caregiver.id,
+            )
+        )
+        is_primary = bool(link and link.is_primary)
+        is_creator = (reminder.created_by_caregiver_id == caregiver.id)
+
+        if not (is_primary or is_creator):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to modify this reminder",
+            )
+
+    return reminder, creator_public_id, creator_name
+
+
 @router.get(
     "/patients/{patient_id}/reminders",
     response_model=list[ReminderItem],
@@ -438,24 +501,14 @@ def get_patient_reminders(
     db: Session = Depends(get_db),
 ) -> list[ReminderItem]:
     get_accessible_patient_for_accessor(patient_id, accessor, db)
-    reminders = db.scalars(
-        select(Reminder)
+    rows = db.execute(
+        select(Reminder, Caregiver.public_id, User.display_name)
+        .join(Caregiver, Caregiver.id == Reminder.created_by_caregiver_id)
+        .join(User, User.id == Caregiver.user_id)
         .where(Reminder.patient_id == patient_id)
         .order_by(Reminder.scheduled_at.asc())
     ).all()
-    return [_reminder_response(reminder) for reminder in reminders]
-
-
-def _reminder_response(reminder: Reminder) -> ReminderItem:
-    return ReminderItem(
-        id=reminder.id,
-        title=reminder.title,
-        description=reminder.description,
-        reminder_type=reminder.reminder_type,
-        scheduled_at=reminder.scheduled_at,
-        is_recurring=reminder.is_recurring,
-        recurrence_rule=reminder.recurrence_rule,
-    )
+    return [_reminder_response(reminder, pub_id, name) for reminder, pub_id, name in rows]
 
 
 @router.post(
@@ -470,11 +523,116 @@ def create_patient_reminder(
     caregiver: Caregiver = Depends(get_current_caregiver),
     db: Session = Depends(get_db),
 ) -> ReminderItem:
-    from app.api.dependencies import get_accessible_patient
-
     get_accessible_patient(patient_id, caregiver, db)
-    reminder = Reminder(patient_id=patient_id, **reminder_data.model_dump())
+    reminder = Reminder(
+        patient_id=patient_id,
+        created_by_caregiver_id=caregiver.id,
+        **reminder_data.model_dump(),
+    )
     db.add(reminder)
     db.commit()
     db.refresh(reminder)
-    return _reminder_response(reminder)
+    user = db.scalar(select(User).where(User.id == caregiver.user_id))
+    creator_name = user.display_name if user else None
+    return _reminder_response(reminder, caregiver.public_id, creator_name)
+
+
+@router.get(
+    "/patients/{patient_id}/reminders/{reminder_id}",
+    response_model=ReminderItem,
+    summary="Get a single reminder",
+)
+def get_patient_reminder(
+    patient_id: UUID,
+    reminder_id: UUID,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> ReminderItem:
+    reminder, creator_public_id, creator_name = _get_reminder_with_auth(
+        patient_id, reminder_id, caregiver, db, require_manage=False
+    )
+    return _reminder_response(reminder, creator_public_id, creator_name)
+
+
+@router.patch(
+    "/patients/{patient_id}/reminders/{reminder_id}",
+    response_model=ReminderItem,
+    summary="Update a reminder",
+)
+def update_patient_reminder(
+    patient_id: UUID,
+    reminder_id: UUID,
+    reminder_data: ReminderUpdateRequest,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> ReminderItem:
+    reminder, creator_public_id, creator_name = _get_reminder_with_auth(
+        patient_id, reminder_id, caregiver, db, require_manage=True
+    )
+
+    update_dict = reminder_data.model_dump(exclude_unset=True)
+    update_dict.pop("patient_id", None)
+    update_dict.pop("created_by_caregiver_id", None)
+
+    # When switching to non-recurring, ensure recurrence_rule is cleared to null
+    if update_dict.get("is_recurring") is False:
+        if "recurrence_rule" not in update_dict or update_dict["recurrence_rule"] is None:
+            update_dict["recurrence_rule"] = None
+
+    for field, value in update_dict.items():
+        setattr(reminder, field, value)
+
+    if reminder.is_recurring and not reminder.recurrence_rule:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="recurrence_rule is required for recurring reminders",
+        )
+    if not reminder.is_recurring and reminder.recurrence_rule is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="recurrence_rule must be null for non-recurring reminders",
+        )
+
+    db.commit()
+    db.refresh(reminder)
+    return _reminder_response(reminder, creator_public_id, creator_name)
+
+
+@router.delete(
+    "/patients/{patient_id}/reminders/{reminder_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a reminder",
+)
+def delete_patient_reminder(
+    patient_id: UUID,
+    reminder_id: UUID,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+):
+    reminder, _, _ = _get_reminder_with_auth(
+        patient_id, reminder_id, caregiver, db, require_manage=True
+    )
+    db.delete(reminder)
+    db.commit()
+    return None
+
+
+@router.patch(
+    "/patients/{patient_id}/reminders/{reminder_id}/status",
+    response_model=ReminderItem,
+    summary="Toggle reminder active status",
+)
+def update_reminder_status(
+    patient_id: UUID,
+    reminder_id: UUID,
+    status_data: ReminderStatusUpdateRequest,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> ReminderItem:
+    reminder, creator_public_id, creator_name = _get_reminder_with_auth(
+        patient_id, reminder_id, caregiver, db, require_manage=True
+    )
+    reminder.is_active = status_data.is_active
+    db.commit()
+    db.refresh(reminder)
+    return _reminder_response(reminder, creator_public_id, creator_name)

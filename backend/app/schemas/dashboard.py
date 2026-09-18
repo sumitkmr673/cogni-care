@@ -94,11 +94,15 @@ class PerformancePoint(BaseModel):
 class ReminderItem(BaseModel):
     id: UUID
     title: str
-    description: str | None
+    description: str | None = None
     reminder_type: str
     scheduled_at: datetime
     is_recurring: bool
-    recurrence_rule: str | None
+    recurrence_rule: str | None = None
+    is_active: bool = True
+    created_at: datetime | None = None
+    created_by_caregiver_public_id: str | None = None
+    created_by_display_name: str | None = None
 
 
 class PatientsResponse(BaseModel):

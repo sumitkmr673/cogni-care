@@ -12,6 +12,7 @@ from app.identifiers import generate_caregiver_public_id
 if TYPE_CHECKING:
     from app.models.patient import Patient
     from app.models.patient_caregiver import PatientCaregiver
+    from app.models.reminder import Reminder
     from app.models.user import User
 
 
@@ -54,4 +55,7 @@ class Caregiver(Base):
         secondary="patient_caregivers",
         back_populates="caregivers",
         viewonly=True,
+    )
+    created_reminders: Mapped[list["Reminder"]] = relationship(
+        back_populates="created_by_caregiver", cascade="all, delete-orphan"
     )

@@ -6,6 +6,26 @@ export default function RemindersPage() {
   if (data.loading) return <LoadingState message="Loading reminders…" />;
   if (data.error) return <ErrorState message={data.error} onRetry={data.reload} />;
   if (data.emptyPatients || !data.dashboard) return <EmptyPatientsState />;
-  return <><PageIntro eyebrow="Patient support" title="Reminders" patient={data.dashboard.patient} action={<Link className="button secondary back-button" to={`/app/patients/${data.selectedId}`}>Back to overview</Link>} /><Reminders reminders={data.reminders} patientId={data.selectedId} onCreated={data.reload} /></>;
+
+  const isPrimary = Boolean(data.dashboard?.caregiver_relationship?.is_primary);
+  const currentCaregiverPublicId = data.dashboard?.caregiver_relationship?.public_id || "";
+
+  return (
+    <>
+      <PageIntro
+        eyebrow="Patient support"
+        title="Reminders"
+        patient={data.dashboard.patient}
+        action={<Link className="button secondary back-button" to={`/app/patients/${data.selectedId}`}>Back to overview</Link>}
+      />
+      <Reminders
+        reminders={data.reminders}
+        patientId={data.selectedId}
+        onCreated={data.reload}
+        isPrimary={isPrimary}
+        currentCaregiverPublicId={currentCaregiverPublicId}
+      />
+    </>
+  );
 }
 

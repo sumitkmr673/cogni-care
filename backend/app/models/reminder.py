@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
 if TYPE_CHECKING:
+    from app.models.caregiver import Caregiver
     from app.models.patient import Patient
 
 
@@ -25,11 +26,15 @@ class Reminder(Base):
             name="ck_reminders_recurrence",
         ),
         Index("ix_reminders_patient_id", "patient_id"),
+        Index("ix_reminders_created_by_caregiver_id", "created_by_caregiver_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     patient_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False
+    )
+    created_by_caregiver_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("caregivers.id", ondelete="CASCADE"), nullable=False
     )
     title: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
@@ -46,3 +51,4 @@ class Reminder(Base):
     )
 
     patient: Mapped["Patient"] = relationship(back_populates="reminders")
+    created_by_caregiver: Mapped["Caregiver"] = relationship(back_populates="created_reminders")
