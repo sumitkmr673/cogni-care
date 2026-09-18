@@ -288,6 +288,48 @@ class PatientWorkflowTests(unittest.TestCase):
         self.assertIsNotNone(rel)
         self.assertFalse(rel["is_primary"], "Linking caregiver must be secondary (is_primary=False)")
 
+    # 10b. linking unassigned patient (no primary) becomes primary
+    def test_10b_linking_unassigned_patient_becomes_primary(self):
+        user = User(
+            display_name="Unassigned Patient",
+            role="PATIENT",
+            is_active=True,
+        )
+        self.db.add(user)
+        self.db.flush()
+        patient_pub_id = f"PT-{uuid4().hex[:8].upper()}"
+        patient = Patient(
+            user_id=user.id,
+            public_id=patient_pub_id,
+            preferred_language="English",
+            timezone="Asia/Kolkata",
+        )
+        self.db.add(patient)
+        self.db.commit()
+        self._temporary_patient_ids.append(patient.id)
+        self._temporary_user_ids.append(user.id)
+
+        email = f"new_primary_{uuid4().hex[:8]}@example.com"
+        self.client.post(
+            "/auth/register",
+            json={"email": email, "password": "Password123!", "display_name": "New Primary CG"},
+        )
+        self._track_user_by_email(email)
+        token = self._token(email, "Password123!")
+
+        link_res = self.client.post(
+            "/patients/link",
+            json={"public_id": patient_pub_id},
+            headers=self._auth_header(token),
+        )
+        self.assertEqual(link_res.status_code, 200)
+
+        dash_res = self.client.get(f"/patients/{patient.id}/dashboard", headers=self._auth_header(token))
+        self.assertEqual(dash_res.status_code, 200)
+        rel = dash_res.json()["caregiver_relationship"]
+        self.assertIsNotNone(rel)
+        self.assertTrue(rel["is_primary"], "Linking caregiver to unassigned patient must be primary (is_primary=True)")
+
     # 11. existing primary remains unchanged
     def test_11_existing_primary_remains_unchanged(self):
         email = f"checkprimary_{uuid4().hex[:8]}@example.com"

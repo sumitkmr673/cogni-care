@@ -22,12 +22,49 @@ export function ErrorState({ message, onRetry }) {
   return <div className="state-card error-state"><strong>We couldn’t load the caregiver workspace</strong><p>{message}</p><button className="button secondary" onClick={onRetry}>Try again</button></div>;
 }
 
-export function EmptyPatientsState() {
-  return <div className="state-card"><strong>No assigned patients yet</strong><p>Your caregiver account does not have any patient assignments.</p></div>;
+export function EmptyPatientsState({ onAddPatient }) {
+  return (
+    <div className="state-card">
+      <strong>No assigned patients yet</strong>
+      <p>Your caregiver account does not have any patient assignments.</p>
+      {onAddPatient ? (
+        <button className="button primary" type="button" onClick={onAddPatient} style={{ marginTop: "10px" }}>
+          Add Patient
+        </button>
+      ) : (
+        <Link to="/app/patients?add=true" className="button primary" style={{ marginTop: "10px", textDecoration: "none" }}>
+          Add Patient
+        </Link>
+      )}
+    </div>
+  );
 }
 
 export function PageIntro({ title, eyebrow, patient, action }) {
-  return <div className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>Clear, compassionate insights from cognitive game activity.</p></div>{patient && <div className="patient-chip"><div className="avatar patient">{initials(patient.display_name)}</div><div><small>Patient</small><strong>{patient.display_name}</strong></div>{action}</div>}</div>;
+  return (
+    <div className="page-intro">
+      <div>
+        <span className="eyebrow">{eyebrow}</span>
+        <h1>{title}</h1>
+        <p>Clear, compassionate insights from cognitive game activity.</p>
+      </div>
+      {patient ? (
+        <div className="patient-chip">
+          <div className="avatar patient">{initials(patient.display_name)}</div>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <small style={{ margin: 0 }}>Patient</small>
+              {patient.public_id && <span className="public-id-badge">{patient.public_id}</span>}
+            </div>
+            <strong>{patient.display_name}</strong>
+          </div>
+          {action}
+        </div>
+      ) : (
+        action && <div className="page-intro-action">{action}</div>
+      )}
+    </div>
+  );
 }
 
 export function PatientSelector({ patients, selectedId }) {
@@ -38,6 +75,10 @@ export function PatientSelector({ patients, selectedId }) {
   function handleChange(event) {
     const nextId = event.target.value;
     if (!nextId) return;
+    if (nextId === "__ADD_PATIENT__") {
+      navigate("/app/patients?add=true");
+      return;
+    }
     const currentPath = location.pathname;
     if (selectedId && currentPath.includes(`/patients/${selectedId}`)) {
       navigate(currentPath.replace(`/patients/${selectedId}`, `/patients/${nextId}`));
@@ -55,6 +96,7 @@ export function PatientSelector({ patients, selectedId }) {
             {patient.display_name}
           </option>
         ))}
+        <option value="__ADD_PATIENT__">+ Add patient…</option>
       </select>
       <Icon name="chevron" size={16} />
     </label>
@@ -86,13 +128,13 @@ export function Reminders({ reminders, patientId, onCreated }) {
 export function OverviewContent({ data }) {
   const { dashboard, performance, sessions, reminders, selectedId, reload } = data;
   const latest = dashboard.latest_performance;
-  return <><PageIntro eyebrow="Caregiver overview" title={`Good morning, ${dashboard.caregiver_relationship?.display_name?.split(" ")[1] || "Caregiver"}`} patient={dashboard.patient} action={<Link className="button secondary back-button" to="/app/patients">All patients</Link>} /><div className="dashboard-grid"><section className="welcome-card"><div><span className="eyebrow">Patient snapshot</span><h2>{dashboard.patient.display_name}</h2><p>{dashboard.patient.preferred_language || "English"} · {dashboard.patient.timezone || "Local time"} · Game activity overview</p></div><div className="welcome-avatar">{initials(dashboard.patient.display_name)}</div><div className="welcome-foot"><span><i className="online-dot" />Activity synced from backend</span><Link className="text-button" to={`/app/patients/${selectedId}/performance`}>View full performance <Icon name="arrow" size={15} /></Link></div></section><div className="stats-grid"><StatCard icon="game" label="Games completed" value={latest?.games_completed ?? "—"} suffix=" today" tone="mint" /><StatCard icon="trend" label="Average accuracy" value={latest?.average_accuracy == null ? "—" : Number(latest.average_accuracy).toFixed(0)} suffix="%" tone="blue" /><StatCard icon="users" label="Memory score" value={latest?.memory_score == null ? "—" : Number(latest.memory_score).toFixed(0)} suffix="/100" tone="peach" /><StatCard icon="trend" label="Attention score" value={latest?.attention_score == null ? "—" : Number(latest.attention_score).toFixed(0)} suffix="/100" tone="lavender" /></div><section className="panel chart-panel"><div className="panel-heading"><div><span className="eyebrow">Cognitive game performance</span><h2>Performance trend</h2></div><Link className="text-button" to={`/app/patients/${selectedId}/performance`}>Details <Icon name="arrow" size={15} /></Link></div><PerformanceChart metrics={performance.slice(-7)} /></section><Reminders reminders={reminders} patientId={selectedId} onCreated={reload} /><section className="panel sessions-panel"><div className="panel-heading"><div><span className="eyebrow">Recent activity</span><h2>Latest game sessions</h2></div><Link className="text-button" to={`/app/patients/${selectedId}/activity`}>See all <Icon name="arrow" size={15} /></Link></div><SessionsTable sessions={sessions.slice(0, 5)} compact /></section></div></>;
+  return <><PageIntro eyebrow="Caregiver overview" title={`Good morning, ${dashboard.caregiver_relationship?.display_name?.split(" ")[1] || "Caregiver"}`} patient={dashboard.patient} action={<div style={{ display: "flex", alignItems: "center", gap: "8px" }}><Link className="button secondary back-button" to="/app/patients">All patients</Link><Link className="button primary" to="/app/patients?add=true" style={{ fontSize: "11px", padding: "7px 11px", textDecoration: "none" }}>+ Add Patient</Link></div>} /><div className="dashboard-grid"><section className="welcome-card"><div><span className="eyebrow">Patient snapshot</span><h2>{dashboard.patient.display_name}</h2><div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "4px 0 8px" }}>{dashboard.patient.public_id && <span className="public-id-badge">{dashboard.patient.public_id}</span>}<span style={{ fontSize: "12px", color: "#c2e0d4" }}>{dashboard.patient.preferred_language || "English"} · {dashboard.patient.timezone || "Local time"}</span></div><p>Game activity overview</p></div><div className="welcome-avatar">{initials(dashboard.patient.display_name)}</div><div className="welcome-foot"><span><i className="online-dot" />Activity synced from backend</span><Link className="text-button" to={`/app/patients/${selectedId}/performance`}>View full performance <Icon name="arrow" size={15} /></Link></div></section><div className="stats-grid"><StatCard icon="game" label="Games completed" value={latest?.games_completed ?? "—"} suffix=" today" tone="mint" /><StatCard icon="trend" label="Average accuracy" value={latest?.average_accuracy == null ? "—" : Number(latest.average_accuracy).toFixed(0)} suffix="%" tone="blue" /><StatCard icon="users" label="Memory score" value={latest?.memory_score == null ? "—" : Number(latest.memory_score).toFixed(0)} suffix="/100" tone="peach" /><StatCard icon="trend" label="Attention score" value={latest?.attention_score == null ? "—" : Number(latest.attention_score).toFixed(0)} suffix="/100" tone="lavender" /></div><section className="panel chart-panel"><div className="panel-heading"><div><span className="eyebrow">Cognitive game performance</span><h2>Performance trend</h2></div><Link className="text-button" to={`/app/patients/${selectedId}/performance`}>Details <Icon name="arrow" size={15} /></Link></div><PerformanceChart metrics={performance.slice(-7)} /></section><Reminders reminders={reminders} patientId={selectedId} onCreated={reload} /><section className="panel sessions-panel"><div className="panel-heading"><div><span className="eyebrow">Recent activity</span><h2>Latest game sessions</h2></div><Link className="text-button" to={`/app/patients/${selectedId}/activity`}>See all <Icon name="arrow" size={15} /></Link></div><SessionsTable sessions={sessions.slice(0, 5)} compact /></section></div></>;
 }
 
 export function PerformanceContent({ data }) {
   const { dashboard, performance, sessions } = data;
   const games = useMemo(() => Object.values(sessions.reduce((result, session) => { if (!result[session.game_code]) result[session.game_code] = { ...session, attempts: 0, accuracy: 0 }; result[session.game_code].attempts += 1; result[session.game_code].accuracy += Number(session.result?.accuracy || 0); return result; }, {})).map((game) => ({ ...game, accuracy: game.accuracy / game.attempts })), [sessions]);
   const latest = dashboard.latest_performance;
-  return <><PageIntro eyebrow="Patient performance" title="Cognitive game performance" patient={dashboard.patient} action={<Link className="button secondary back-button" to={`/app/patients/${data.selectedId}`}>Back to overview</Link>} /><div className="performance-grid"><div className="performance-summary"><div className="profile-large"><div className="avatar patient large">{initials(dashboard.patient.display_name)}</div><div><strong>{dashboard.patient.display_name}</strong><span>Patient profile · {dashboard.patient.preferred_language || "English"}</span><small>Performance indicators are based on game activity, not a medical diagnosis.</small></div></div><div className="metric-row"><div><span>Memory performance</span><strong>{latest?.memory_score == null ? "—" : Number(latest.memory_score).toFixed(0)}<small>/100</small></strong></div><div><span>Attention performance</span><strong>{latest?.attention_score == null ? "—" : Number(latest.attention_score).toFixed(0)}<small>/100</small></strong></div><div><span>Game accuracy</span><strong>{latest?.average_accuracy == null ? "—" : Number(latest.average_accuracy).toFixed(0)}<small>%</small></strong></div><div><span>Avg. response time</span><strong>{latest?.average_response_time_ms == null ? "—" : (latest.average_response_time_ms / 1000).toFixed(1)}<small>s</small></strong></div></div></div><section className="panel full-chart-panel"><div className="panel-heading"><div><span className="eyebrow">Daily history</span><h2>Performance trend</h2></div></div><PerformanceChart metrics={performance} /></section><section className="panel game-breakdown"><div className="panel-heading"><div><span className="eyebrow">Across all activities</span><h2>Game-by-game performance</h2></div></div><div className="game-table">{games.length ? games.map((game) => <div className="game-table-row" key={game.game_code}><div className={`game-badge ${game.game_code.toLowerCase()}`}><Icon name="game" size={17} /></div><div className="game-table-name"><strong>{game.game_name}</strong><span>{game.attempts} completed · Latest level {game.difficulty_level}</span></div><div className="bar-track"><i style={{ width: `${Math.min(game.accuracy, 100)}%` }} /></div><strong className="game-percent">{game.accuracy.toFixed(0)}%</strong></div>) : <p className="muted">No game performance yet.</p>}</div></section><section className="panel performance-sessions"><div className="panel-heading"><div><span className="eyebrow">Detailed history</span><h2>Recent sessions & results</h2></div></div><SessionsTable sessions={sessions} /></section></div></>;
+  return <><PageIntro eyebrow="Patient performance" title="Cognitive game performance" patient={dashboard.patient} action={<Link className="button secondary back-button" to={`/app/patients/${data.selectedId}`}>Back to overview</Link>} /><div className="performance-grid"><div className="performance-summary"><div className="profile-large"><div className="avatar patient large">{initials(dashboard.patient.display_name)}</div><div><strong>{dashboard.patient.display_name}</strong><span style={{ display: "flex", alignItems: "center", gap: "6px" }}>Patient profile {dashboard.patient.public_id && <span className="public-id-badge">{dashboard.patient.public_id}</span>} · {dashboard.patient.preferred_language || "English"}</span><small>Performance indicators are based on game activity, not a medical diagnosis.</small></div></div><div className="metric-row"><div><span>Memory performance</span><strong>{latest?.memory_score == null ? "—" : Number(latest.memory_score).toFixed(0)}<small>/100</small></strong></div><div><span>Attention performance</span><strong>{latest?.attention_score == null ? "—" : Number(latest.attention_score).toFixed(0)}<small>/100</small></strong></div><div><span>Game accuracy</span><strong>{latest?.average_accuracy == null ? "—" : Number(latest.average_accuracy).toFixed(0)}<small>%</small></strong></div><div><span>Avg. response time</span><strong>{latest?.average_response_time_ms == null ? "—" : (latest.average_response_time_ms / 1000).toFixed(1)}<small>s</small></strong></div></div></div><section className="panel full-chart-panel"><div className="panel-heading"><div><span className="eyebrow">Daily history</span><h2>Performance trend</h2></div></div><PerformanceChart metrics={performance} /></section><section className="panel game-breakdown"><div className="panel-heading"><div><span className="eyebrow">Across all activities</span><h2>Game-by-game performance</h2></div></div><div className="game-table">{games.length ? games.map((game) => <div className="game-table-row" key={game.game_code}><div className={`game-badge ${game.game_code.toLowerCase()}`}><Icon name="game" size={17} /></div><div className="game-table-name"><strong>{game.game_name}</strong><span>{game.attempts} completed · Latest level {game.difficulty_level}</span></div><div className="bar-track"><i style={{ width: `${Math.min(game.accuracy, 100)}%` }} /></div><strong className="game-percent">{game.accuracy.toFixed(0)}%</strong></div>) : <p className="muted">No game performance yet.</p>}</div></section><section className="panel performance-sessions"><div className="panel-heading"><div><span className="eyebrow">Detailed history</span><h2>Recent sessions & results</h2></div></div><SessionsTable sessions={sessions} /></section></div></>;
 }
 

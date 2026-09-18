@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  addCareTeamMember as apiAddCareTeamMember,
   clearToken,
+  createPatient as apiCreatePatient,
   createPatientReminder,
   getCareTeam,
   getPatientDashboard,
@@ -8,6 +10,9 @@ import {
   getPatientSessions,
   getPatientTrends,
   getPatients,
+  linkPatient as apiLinkPatient,
+  removeCareTeamMember as apiRemoveCareTeamMember,
+  transferPrimaryCaregiver as apiTransferPrimaryCaregiver,
 } from "../api";
 
 export default function useCaregiverData(patientId) {
@@ -67,6 +72,37 @@ export default function useCaregiverData(patientId) {
     await load(selectedId);
   }, [load, selectedId]);
 
+  const createPatient = useCallback(async (payload) => {
+    const newPatient = await apiCreatePatient(payload);
+    await load(newPatient.id);
+    return newPatient;
+  }, [load]);
+
+  const linkPatient = useCallback(async (publicId) => {
+    const linkedPatient = await apiLinkPatient(publicId);
+    await load(linkedPatient.id);
+    return linkedPatient;
+  }, [load]);
+
+  const addCareTeamMember = useCallback(async (caregiverPublicId) => {
+    const member = await apiAddCareTeamMember(selectedId, caregiverPublicId);
+    const updatedTeam = await getCareTeam(selectedId).then((res) => res?.members || []).catch(() => []);
+    setCareTeam(updatedTeam);
+    return member;
+  }, [selectedId]);
+
+  const transferPrimary = useCallback(async (caregiverId) => {
+    const member = await apiTransferPrimaryCaregiver(selectedId, caregiverId);
+    await load(selectedId);
+    return member;
+  }, [load, selectedId]);
+
+  const removeCareTeamMember = useCallback(async (caregiverId) => {
+    await apiRemoveCareTeamMember(selectedId, caregiverId);
+    const updatedTeam = await getCareTeam(selectedId).then((res) => res?.members || []).catch(() => []);
+    setCareTeam(updatedTeam);
+  }, [selectedId]);
+
   return {
     patients,
     selectedId,
@@ -81,5 +117,11 @@ export default function useCaregiverData(patientId) {
     reload: () => load(selectedId),
     loadPatient: load,
     createReminder,
+    createPatient,
+    linkPatient,
+    addCareTeamMember,
+    transferPrimary,
+    removeCareTeamMember,
   };
 }
+

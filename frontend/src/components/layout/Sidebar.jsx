@@ -41,7 +41,21 @@ export default function Sidebar({ patientId, caregiver, onSignOut }) {
       <div className="sidebar-account">
         <NavLink to="/app/profile" className={({ isActive }) => isActive ? "active" : ""}><Icon name="users" size={17} />Profile</NavLink>
         <button type="button" onClick={signOut}><Icon name="arrow" size={17} />Sign out</button>
-        <div className="sidebar-caregiver"><div className="avatar doctor">{caregiver?.display_name?.split(/\s+/).map((part) => part[0]).slice(0, 2).join("") || "CC"}</div><span>{caregiver?.display_name || "Caregiver"}</span></div>
+        <div className="sidebar-caregiver">
+          <div className="avatar doctor">
+            {caregiver?.display_name?.split(/\s+/).map((part) => part[0]).slice(0, 2).join("") || "CC"}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <strong style={{ display: "block", fontSize: "12px", color: "#40534f", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {caregiver?.display_name || "Caregiver"}
+            </strong>
+            {caregiver?.public_id && (
+              <span style={{ fontSize: "10px", color: "#879792", fontFamily: "monospace" }}>
+                {caregiver.public_id}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </aside>
   );

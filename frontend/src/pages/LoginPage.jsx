@@ -7,8 +7,8 @@ const demoPassword = import.meta.env.VITE_DEMO_CAREGIVER_PASSWORD || "DemoCaregi
 export default function LoginPage({ authenticated, onSignIn }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState(demoEmail);
-  const [password, setPassword] = useState(demoPassword);
+  const [email, setEmail] = useState(location.state?.prefillEmail || demoEmail);
+  const [password, setPassword] = useState(location.state?.prefillEmail ? "" : demoPassword);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -28,5 +28,75 @@ export default function LoginPage({ authenticated, onSignIn }) {
     }
   }
 
-  return <div className="auth-shell"><div className="auth-card"><div className="brand auth-brand"><div className="brand-mark"><span /><span /><span /></div><div><strong>Cogni<span>-</span>Care</strong><small>Caregiver support</small></div></div><span className="eyebrow">Caregiver portal</span><h1>Welcome back</h1><p className="auth-copy">Sign in to view assigned patient activity and cognitive game performance.</p><form onSubmit={submit} className="auth-form"><label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label><label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>{error && <p className="form-error" role="alert">{error}</p>}<button className="button primary" type="submit" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button></form><section className="demo-access"><span className="eyebrow">Demo access</span><p>Use the seeded development caregiver account for the SIH demonstration.</p><code>{demoEmail}</code><code>{demoPassword}</code><button type="button" className="text-button" onClick={() => { setEmail(demoEmail); setPassword(demoPassword); }}>Use demo account</button></section><Link className="home-link" to="/">← Back to Home</Link><small className="auth-note">Development prototype · access is provided by the FastAPI backend.</small></div></div>;
+  return (
+    <div className="auth-shell">
+      <div className="auth-card">
+        <div className="brand auth-brand">
+          <div className="brand-mark">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div>
+            <strong>
+              Cogni<span>-</span>Care
+            </strong>
+            <small>Caregiver support</small>
+          </div>
+        </div>
+        <span className="eyebrow">Caregiver portal</span>
+        <h1>Welcome back</h1>
+        <p className="auth-copy">Sign in to view assigned patient activity and cognitive game performance.</p>
+        <form onSubmit={submit} className="auth-form">
+          <label>
+            Email
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          </label>
+          <label>
+            Password
+            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+          </label>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button primary" type="submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <div style={{ marginTop: "18px", textAlign: "center" }}>
+          <span style={{ fontSize: "12px", color: "#879792" }}>
+            Need a caregiver account?{" "}
+            <Link to="/register" style={{ color: "#185a4e", fontWeight: 700 }}>
+              Register
+            </Link>
+          </span>
+        </div>
+
+        <section className="demo-access">
+          <span className="eyebrow">Demo access</span>
+          <p>Use the seeded development caregiver account for the SIH demonstration.</p>
+          <code>{demoEmail}</code>
+          <code>{demoPassword}</code>
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => {
+              setEmail(demoEmail);
+              setPassword(demoPassword);
+            }}
+          >
+            Use demo account
+          </button>
+        </section>
+        <Link className="home-link" to="/">
+          ← Back to Home
+        </Link>
+        <small className="auth-note">Development prototype · access is provided by the FastAPI backend.</small>
+      </div>
+    </div>
+  );
 }
+

@@ -177,10 +177,16 @@ def link_patient(
             detail="Patient is already linked to this caregiver",
         )
 
+    has_primary = db.scalar(
+        select(PatientCaregiver.id).where(
+            PatientCaregiver.patient_id == patient.id,
+            PatientCaregiver.is_primary.is_(True),
+        )
+    )
     link = PatientCaregiver(
         patient_id=patient.id,
         caregiver_id=caregiver.id,
-        is_primary=False,
+        is_primary=(has_primary is None),
     )
     db.add(link)
     try:

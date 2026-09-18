@@ -105,7 +105,52 @@ export function createPatientReminder(patientId, reminder) {
   });
 }
 
+export async function registerCaregiver(payload) {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw await parseError(response);
+  }
+  return response.json();
+}
+
+export function createPatient(payload) {
+  return request("/patients", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function linkPatient(publicId) {
+  return request("/patients/link", {
+    method: "POST",
+    body: JSON.stringify({ public_id: publicId }),
+  });
+}
+
 export function getCareTeam(patientId) {
   return request(`/patients/${patientId}/care-team`);
+}
+
+export function addCareTeamMember(patientId, caregiverPublicId) {
+  return request(`/patients/${patientId}/care-team`, {
+    method: "POST",
+    body: JSON.stringify({ caregiver_public_id: caregiverPublicId }),
+  });
+}
+
+export function transferPrimaryCaregiver(patientId, caregiverId) {
+  return request(`/patients/${patientId}/care-team/${caregiverId}/primary`, {
+    method: "PUT",
+  });
+}
+
+export function removeCareTeamMember(patientId, caregiverId) {
+  return request(`/patients/${patientId}/care-team/${caregiverId}`, {
+    method: "DELETE",
+  });
 }
 
