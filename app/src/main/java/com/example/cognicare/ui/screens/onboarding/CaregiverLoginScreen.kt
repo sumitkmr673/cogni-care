@@ -152,11 +152,11 @@ fun CaregiverLoginScreen(
                         },
                         singleLine = true,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        isError = state.error == CaregiverLoginError.INVALID_CREDENTIALS,
-                        supportingText = if (state.error == CaregiverLoginError.INVALID_CREDENTIALS) {
-                            { Text(stringResource(R.string.error_invalid_credentials)) }
-                        } else {
-                            null
+                        isError = state.error == CaregiverLoginError.INVALID_CREDENTIALS || state.error == CaregiverLoginError.NETWORK_ERROR,
+                        supportingText = when (state.error) {
+                            CaregiverLoginError.INVALID_CREDENTIALS -> { { Text(stringResource(R.string.error_invalid_credentials)) } }
+                            CaregiverLoginError.NETWORK_ERROR -> { { Text(stringResource(R.string.error_network)) } }
+                            else -> null
                         },
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,

@@ -45,10 +45,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -173,19 +177,22 @@ fun rememberSpeechRecognizerController(): SpeechRecognizerController {
     return controller
 }
 
+/** A live recognizer plus the tap handler that starts or stops it (asking for the mic first). */
+class VoiceCapture(val controller: SpeechRecognizerController, val onSpeakClick: () -> Unit)
+
 /**
- * Big speak button plus status line. Handles the microphone permission, and falls back to a
- * note when the device has no recognition service; callers always offer tap answers too.
+ * The microphone plumbing shared by every voice surface — the answer box in the talking games,
+ * the suggestion dialog, and the floating assistant — so permission handling and language
+ * selection exist exactly once.
  *
  * @param resetKey change it (e.g. the question index) to clear the previous attempt.
  */
 @Composable
-fun VoiceAnswerCapture(
+fun rememberVoiceCapture(
     onResult: (String) -> Unit,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     resetKey: Any? = null
-) {
+): VoiceCapture {
     val context = LocalContext.current
     val controller = rememberSpeechRecognizerController()
     val latestOnResult by rememberUpdatedState(onResult)
@@ -210,24 +217,55 @@ fun VoiceAnswerCapture(
             else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
+    // Rebuilt each composition on purpose: onSpeakClick closes over the current languageTag.
+    return VoiceCapture(controller, onSpeakClick)
+}
+
+/** The one-line status under a speak button, or null when there is nothing to say. */
+@Composable
+fun speechStatusText(controller: SpeechRecognizerController): String? = when {
+    controller.isListening && controller.partialText.isNotBlank() ->
+        stringResource(R.string.speech_heard, controller.partialText)
+    controller.isListening -> stringResource(R.string.speech_listening_hint)
+    controller.error == SpeechError.NO_MATCH -> stringResource(R.string.speech_error_no_match)
+    controller.error == SpeechError.PERMISSION_DENIED -> stringResource(R.string.speech_error_permission)
+    controller.error == SpeechError.UNAVAILABLE -> stringResource(R.string.speech_error_other)
+    else -> null
+}
+
+/**
+ * Big speak button plus status line. Handles the microphone permission, and falls back to a
+ * note when the device has no recognition service; callers always offer tap answers too.
+ *
+ * @param resetKey change it (e.g. the question index) to clear the previous attempt.
+ */
+@Composable
+fun VoiceAnswerCapture(
+    onResult: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    resetKey: Any? = null,
+    buttonSize: Dp = 168.dp,
+    idleIcon: ImageVector = Icons.Rounded.Mic
+) {
+    val capture = rememberVoiceCapture(onResult = onResult, enabled = enabled, resetKey = resetKey)
+    val controller = capture.controller
 
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (!controller.isAvailable) {
             DemoNote(stringResource(R.string.speech_unavailable))
         } else {
-            SpeakButton(isListening = controller.isListening, enabled = enabled, onClick = onSpeakClick)
+            SpeakButton(
+                isListening = controller.isListening,
+                enabled = enabled,
+                onClick = capture.onSpeakClick,
+                size = buttonSize,
+                idleIcon = idleIcon
+            )
             Spacer(Modifier.height(12.dp))
 
             val isError = !controller.isListening && controller.error != null
-            val status = when {
-                controller.isListening && controller.partialText.isNotBlank() ->
-                    stringResource(R.string.speech_heard, controller.partialText)
-                controller.isListening -> stringResource(R.string.speech_listening_hint)
-                controller.error == SpeechError.NO_MATCH -> stringResource(R.string.speech_error_no_match)
-                controller.error == SpeechError.PERMISSION_DENIED -> stringResource(R.string.speech_error_permission)
-                controller.error == SpeechError.UNAVAILABLE -> stringResource(R.string.speech_error_other)
-                else -> null
-            }
+            val status = speechStatusText(controller)
             if (status != null) {
                 Text(
                     text = status,
@@ -243,23 +281,37 @@ fun VoiceAnswerCapture(
     }
 }
 
+/**
+ * The one speak button in the app. [idleIcon] lets the voice assistant show its robot while
+ * keeping the same shape, colours, pulsing halo and haptic tick as the game microphone.
+ */
 @Composable
 fun SpeakButton(
     isListening: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    size: Dp = 168.dp
+    size: Dp = 168.dp,
+    idleIcon: ImageVector = Icons.Rounded.Mic,
+    showLabel: Boolean = true
 ) {
     val container = if (isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val label = stringResource(if (isListening) R.string.speech_button_listening else R.string.speech_button_idle)
+    val haptics = LocalHapticFeedback.current
 
     Box(modifier = modifier.size(size * 1.25f), contentAlignment = Alignment.Center) {
         if (isListening) ListeningHalo(color = container, size = size)
         Surface(
-            onClick = onClick,
+            onClick = {
+                // A physical tick confirms the press for patients who may not notice the colour change.
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
             enabled = enabled,
-            modifier = Modifier.size(size),
+            // The visible label already names the button; only describe it when that label is hidden.
+            modifier = Modifier
+                .size(size)
+                .then(if (showLabel) Modifier else Modifier.semantics { contentDescription = label }),
             shape = CircleShape,
             color = if (enabled) container else container.copy(alpha = 0.4f),
             contentColor = Color.White,
@@ -270,12 +322,14 @@ fun SpeakButton(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
-                    imageVector = if (isListening) Icons.Rounded.Stop else Icons.Rounded.Mic,
+                    imageVector = if (isListening) Icons.Rounded.Stop else idleIcon,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier.size(size * 0.38f)
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(text = label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+                if (showLabel) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(text = label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+                }
             }
         }
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-build override of app/src/main/res/xml/network_security_config.xml (same resource
+  name, so this replaces it only in debug builds). The local backend (docker compose up in
+  cogni-care/backend) has no TLS cert, so debug builds need cleartext HTTP; release builds
+  keep the main config's TLS-only policy untouched.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

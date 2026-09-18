@@ -1,6 +1,9 @@
 package com.example.cognicare.core.time
 
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -40,3 +43,13 @@ fun formatWeekdayDateTime(millis: Long): String = format("EEE, d MMM · h:mm a",
 
 private fun format(pattern: String, millis: Long): String =
     SimpleDateFormat(pattern, Locale.getDefault()).format(Date(millis))
+
+/** Parses a backend ISO-8601 timestamp (e.g. "2026-09-15T10:00:00+00:00") to epoch millis. */
+fun parseIsoDateTimeMillis(iso: String): Long? =
+    runCatching { OffsetDateTime.parse(iso).toInstant().toEpochMilli() }.getOrNull()
+
+/** Parses a backend plain date (e.g. "2026-09-15") to local midnight, epoch millis. */
+fun parseIsoDateMillis(isoDate: String): Long? =
+    runCatching {
+        LocalDate.parse(isoDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }.getOrNull()

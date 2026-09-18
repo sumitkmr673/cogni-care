@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +59,49 @@ import com.example.cognicare.R
 import com.example.cognicare.ui.theme.PatientTheme
 
 const val ONBOARDING_STEP_COUNT = 4
+
+/**
+ * Extra room at the bottom of every [PatientScreen] so the last content can scroll clear of the
+ * floating voice assistant. Zero outside the patient area, where no assistant is shown.
+ */
+val LocalFloatingAssistantInset = staticCompositionLocalOf { 0.dp }
+
+/**
+ * A full-width answer button: the style shared by the talking games' tap answers and the
+ * suggestion dialogs, so every "say it or tap it" choice in the app looks and feels the same.
+ */
+@Composable
+fun LargeChoiceButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    highlighted: Boolean = false
+) {
+    val colors = PatientTheme.colors
+    val primary = MaterialTheme.colorScheme.primary
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = PatientTheme.dimens.primaryAction),
+        shape = RoundedCornerShape(16.dp),
+        color = if (highlighted) colors.selectedContainer else MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(if (highlighted) 2.dp else 1.5.dp, if (highlighted) primary else colors.cardBorder)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+            if (highlighted) {
+                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = primary, modifier = Modifier.size(30.dp))
+            }
+        }
+    }
+}
 
 @Composable
 fun onboardingStepLabels(): List<String> = listOf(
@@ -99,6 +143,7 @@ fun PatientScreen(
                 content = content
             )
             KioskFooter()
+            Spacer(Modifier.height(LocalFloatingAssistantInset.current))
         }
     }
 }

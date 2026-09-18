@@ -3,6 +3,7 @@ package com.example.cognicare.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cognicare.data.demo.DemoData
+import com.example.cognicare.repository.AuthFailure
 import com.example.cognicare.repository.AuthRepository
 import com.example.cognicare.repository.AuthResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -45,7 +46,13 @@ class CaregiverLoginViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isSigningIn = false,
-                    error = if (result is AuthResult.Failure) CaregiverLoginError.INVALID_CREDENTIALS else null
+                    error = (result as? AuthResult.Failure)?.let { failure ->
+                        if (failure.reason == AuthFailure.NETWORK_ERROR) {
+                            CaregiverLoginError.NETWORK_ERROR
+                        } else {
+                            CaregiverLoginError.INVALID_CREDENTIALS
+                        }
+                    }
                 )
             }
         }

@@ -18,7 +18,10 @@ enum class GameType(val domain: CognitiveDomain) {
 
 enum class Trend { IMPROVING, STABLE, DECLINING }
 
-enum class ReminderKind { GAME, MEDICATION, WALK, MEAL, APPOINTMENT }
+// WALK and MEAL are local-only categories from the original design; ACTIVITY and OTHER are the
+// backend's own reminder_type values (see cogni-care/backend/app/models/reminder.py) and cover
+// anything the backend sends that doesn't fit the others.
+enum class ReminderKind { GAME, MEDICATION, WALK, MEAL, APPOINTMENT, ACTIVITY, OTHER }
 
 enum class AlertType { MISSED_ACTIVITY, PERFORMANCE_DROP, SYNC_OVERDUE }
 

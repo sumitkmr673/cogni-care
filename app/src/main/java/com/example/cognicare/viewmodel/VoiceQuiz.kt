@@ -3,12 +3,17 @@ package com.example.cognicare.viewmodel
 import androidx.annotation.DrawableRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cognicare.core.text.isAcceptedAnswer
+import com.example.cognicare.data.model.GameOutcome
+import com.example.cognicare.data.model.GameType
+import com.example.cognicare.repository.AuthRepository
+import com.example.cognicare.repository.CareRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 sealed interface QuizVisual {
     data class Emoji(val emoji: String) : QuizVisual
@@ -86,19 +91,7 @@ class VoiceQuizEngine(questions: List<VoiceQuizQuestion>) {
 
     companion object {
         /** Whole-word match, so "It's Friday today" accepts "friday" but "homework" does not accept "home". */
-        fun isAccepted(answer: String, accepted: List<String>): Boolean {
-            val spoken = " ${normalize(answer)} "
-            return accepted.any { token ->
-                val word = normalize(token)
-                word.isNotEmpty() && spoken.contains(" $word ")
-            }
-        }
-
-        private fun normalize(text: String): String =
-            text.lowercase(Locale.getDefault())
-                .replace(Regex("[^\\p{L}\\p{N}\\p{M}\\s]"), " ")
-                .replace(Regex("\\s+"), " ")
-                .trim()
+        fun isAccepted(answer: String, accepted: List<String>): Boolean = isAcceptedAnswer(answer, accepted)
     }
 }
 
@@ -108,11 +101,18 @@ fun quizChoices(correct: String, pool: List<String>, count: Int = 3): List<Strin
 
 /**
  * Base for the voice games. Answers are never blocked or retried: the patient hears a gentle
- * reveal and moves on, and no score is shown on the patient side.
+ * reveal and moves on, and no score is shown on the patient side. [gameType] identifies which
+ * backend game code the finished session reports under (see [com.example.cognicare.repository.toBackendCode]).
  */
-abstract class VoiceQuizViewModel : ViewModel() {
+abstract class VoiceQuizViewModel(
+    private val careRepository: CareRepository,
+    private val authRepository: AuthRepository,
+    private val gameType: GameType
+) : ViewModel() {
 
     private val engine: VoiceQuizEngine by lazy { VoiceQuizEngine(buildQuestions()) }
+    private val startedAtMillis = System.currentTimeMillis()
+    private var hasReportedCompletion = false
 
     val uiState: StateFlow<VoiceQuizUiState>
         get() = engine.state
@@ -129,7 +129,35 @@ abstract class VoiceQuizViewModel : ViewModel() {
         viewModelScope.launch {
             delay(pause)
             engine.advance()
+            val finished = engine.state.value
+            if (finished.isComplete && !hasReportedCompletion) {
+                hasReportedCompletion = true
+                reportCompletion(finished)
+            }
         }
+    }
+
+    private suspend fun reportCompletion(finished: VoiceQuizUiState) {
+        // Games are only reachable from the patient graph, but a stale/expired session could
+        // still slip through; skip silently rather than let CareRepository fail on it.
+        if (authRepository.session.first() == null) return
+
+        val total = finished.questions.size
+        if (total == 0) return
+        val correct = finished.correctCount
+        val elapsedMs = System.currentTimeMillis() - startedAtMillis
+
+        careRepository.recordGameCompletion(
+            gameType,
+            GameOutcome(
+                scorePercent = correct * 100.0 / total,
+                accuracyPercent = correct * 100.0 / total,
+                correctAnswers = correct,
+                totalQuestions = total,
+                responseTimeMs = (elapsedMs / total).toInt(),
+                mistakes = total - correct
+            )
+        )
     }
 
     private companion object {

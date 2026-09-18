@@ -96,14 +96,25 @@ private fun StatusLine(state: PatternRecallUiState) {
     } else {
         MaterialTheme.colorScheme.primary
     }
-    Text(
-        text = stringResource(R.string.pattern_recall_round, minOf(state.round, PatternRecallUiState.WIN_ROUND), PatternRecallUiState.WIN_ROUND)
-            + "  ·  " + stringResource(textRes),
-        modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
-        style = MaterialTheme.typography.labelLarge,
-        color = color,
-        textAlign = TextAlign.Center
-    )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.game_level, state.level, state.maxLevel),
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.labelLarge,
+            color = PatientTheme.colors.mutedText,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            // Rounds come from the level now, not a fixed constant.
+            text = stringResource(R.string.pattern_recall_round, minOf(state.round, state.winRound), state.winRound)
+                + "  ·  " + stringResource(textRes),
+            modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.labelLarge,
+            color = color,
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Composable

@@ -4,37 +4,36 @@ import androidx.annotation.StringRes
 import com.example.cognicare.R
 import com.example.cognicare.core.locale.AppLocaleProvider
 import com.example.cognicare.core.time.startOfDay
-import com.example.cognicare.data.model.DailyScorePoint
 import com.example.cognicare.data.model.FamilyMember
-import com.example.cognicare.data.model.GamePerformance
-import com.example.cognicare.data.model.GameSession
-import com.example.cognicare.data.model.GameType
-import com.example.cognicare.data.model.PatientDashboard
-import com.example.cognicare.data.model.PatientProfile
 import com.example.cognicare.data.model.Reminder
 import com.example.cognicare.data.model.ReminderKind
-import com.example.cognicare.data.model.SyncStatus
 
-/** Synthetic demonstration data. Replaced by Room-backed data in the sync step. */
+/**
+ * Three kinds of content live here now that the app talks to the real backend
+ * (cogni-care/backend, seeded by `python -m app.scripts.seed_demo`):
+ *
+ * - Real seeded account credentials, for the Welcome screen's "start with the demo X" shortcuts.
+ * - [familyMembers]: the Family Identification game's content, purely local — the backend has no
+ *   concept of a patient's family photo or relations, only game session results.
+ * - [reminders]: a local fallback schedule. The backend has no endpoint for a patient to read
+ *   their own reminders (that list is caregiver/doctor-only — see [RemoteCareRepository]),
+ *   so this is what the patient's home screen falls back to.
+ */
 object DemoData {
-    const val PATIENT_ID = "demo-patient-meera"
-    const val PATIENT_PIN = "1234"
-    const val CAREGIVER_ID = "demo-caregiver-ananya"
-    const val CAREGIVER_EMAIL = "ananya.mehta@example.com"
-    const val CAREGIVER_PASSWORD = "demo123"
+    // Matches backend/app/scripts/seed_demo.py exactly. Development credentials, not for reuse
+    // anywhere real — see that repo's README for the full list of ten seeded accounts.
+    const val PATIENT_EMAIL = "demo.patient@cogni-care.example"
+    const val PATIENT_PASSWORD = "DemoPatientOnly-2026!"
+    const val CAREGIVER_EMAIL = "demo.caregiver@cogni-care.example"
+    const val CAREGIVER_PASSWORD = "DemoCaregiverOnly-2026!"
 
+    /** First name on the seeded demo patient account ("Meera Sharma (Demo)"), which the patient says or types to sign in. */
+    const val PATIENT_NAME = "Meera"
+
+    private const val PLACEHOLDER_PATIENT_ID = "local-fallback"
     private const val MINUTE = 60_000L
     private const val HOUR = 60 * MINUTE
     private const val DAY = 24 * HOUR
-
-    val meera = PatientProfile(
-        id = PATIENT_ID,
-        name = "Meera Sharma (Demo)",
-        languageTag = "en",
-        timeZoneId = "Asia/Kolkata"
-    )
-
-    val patients: List<PatientProfile> = listOf(meera)
 
     // Face boxes are measured in pixels on the 612x408 stock photo (res/drawable/family_photo.jpg).
     private const val PHOTO_WIDTH = 612f
@@ -68,8 +67,9 @@ object DemoData {
     )
 
     /**
-     * Reminder titles live in resources so the demo reads in the chosen language. Real reminders
-     * are caregiver-entered text, which is why [Reminder.title] itself stays a plain string.
+     * Reminder titles live in resources so the fallback reads in the chosen language. Real
+     * reminders (from the caregiver dashboard) are caregiver-entered text, which is why
+     * [Reminder.title] itself stays a plain string.
      */
     private data class ReminderTemplate(
         val id: String,
@@ -88,16 +88,18 @@ object DemoData {
         ReminderTemplate("reminder-care-review", R.string.reminder_care_review, ReminderKind.APPOINTMENT, 3 * DAY + 16 * HOUR + 30 * MINUTE, isRecurring = false)
     )
 
+    /** [patientId] is stamped onto each entry by the caller (see [RemoteCareRepository]); it is not known here. */
     fun reminders(
         locale: AppLocaleProvider,
         completedIds: Set<String> = emptySet(),
-        now: Long = System.currentTimeMillis()
+        now: Long = System.currentTimeMillis(),
+        patientId: String = PLACEHOLDER_PATIENT_ID
     ): List<Reminder> {
         val today = startOfDay(now)
         return reminderTemplates.map { template ->
             Reminder(
                 id = template.id,
-                patientId = PATIENT_ID,
+                patientId = patientId,
                 title = locale.getString(template.titleRes),
                 kind = template.kind,
                 scheduledTime = today + template.offsetMillis,
@@ -105,46 +107,5 @@ object DemoData {
                 completed = template.id in completedIds
             )
         }
-    }
-
-    fun dashboard(
-        patient: PatientProfile,
-        upcomingReminders: List<Reminder>,
-        now: Long = System.currentTimeMillis()
-    ): PatientDashboard {
-        val today = startOfDay(now)
-        val memory = listOf(78f, 79f, 81f, 80f, 83f, 84f, 84f, 86f, 87f, 88f)
-        val attention = listOf(80f, 82f, 81f, 84f, 85f, 86f, 88f, 88f, 89f, 90f)
-        val trend = memory.indices.map { index ->
-            DailyScorePoint(
-                dayStartMillis = today - (memory.lastIndex - index) * DAY,
-                memory = memory[index],
-                attention = attention[index]
-            )
-        }
-
-        return PatientDashboard(
-            patient = patient,
-            gamesCompletedToday = 1,
-            averageAccuracyPercent = 92,
-            memoryScore = 88,
-            attentionScore = 90,
-            averageResponseSeconds = 0.9,
-            trend = trend,
-            gamePerformance = listOf(
-                GamePerformance(GameType.DAILY_RECALL, completedCount = 2, latestLevel = 2, accuracyPercent = 90),
-                GamePerformance(GameType.MEMORY_MATCH, completedCount = 2, latestLevel = 3, accuracyPercent = 90),
-                GamePerformance(GameType.ORIENTATION, completedCount = 2, latestLevel = 2, accuracyPercent = 87),
-                GamePerformance(GameType.FAMILY_IDENTIFICATION, completedCount = 2, latestLevel = 3, accuracyPercent = 92),
-                GamePerformance(GameType.OBJECT_NAMING, completedCount = 2, latestLevel = 2, accuracyPercent = 88)
-            ),
-            recentSessions = listOf(
-                GameSession("session-3", patient.id, GameType.DAILY_RECALL, now - 2 * HOUR - 6 * MINUTE, now - 2 * HOUR, "{}", SyncStatus.PENDING),
-                GameSession("session-2", patient.id, GameType.MEMORY_MATCH, now - DAY - 3 * HOUR, now - DAY - 3 * HOUR + 7 * MINUTE, "{}", SyncStatus.SYNCED),
-                GameSession("session-1", patient.id, GameType.FAMILY_IDENTIFICATION, now - 2 * DAY - 5 * HOUR, now - 2 * DAY - 5 * HOUR + 9 * MINUTE, "{}", SyncStatus.SYNCED)
-            ),
-            upcomingReminders = upcomingReminders,
-            lastSyncedAt = now - 2 * HOUR
-        )
     }
 }

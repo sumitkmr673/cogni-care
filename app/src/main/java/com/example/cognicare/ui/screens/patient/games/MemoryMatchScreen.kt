@@ -62,12 +62,21 @@ fun MemoryMatchScreen(
         Spacer(Modifier.height(8.dp))
         LeadText(stringResource(R.string.memory_match_lead))
         Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.memory_match_pairs_found, state.matchedPairs, state.totalPairs),
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
+        // The board is dealt once the stored level loads; until then there is nothing to count.
+        if (state.isReady) {
+            Text(
+                text = stringResource(R.string.game_level, state.level, state.maxLevel),
+                style = MaterialTheme.typography.labelLarge,
+                color = PatientTheme.colors.mutedText
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.memory_match_pairs_found, state.matchedPairs, state.totalPairs),
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         Spacer(Modifier.height(20.dp))
 
         // Plain rows, not LazyVerticalGrid: PatientScreen already scrolls vertically, and a lazy

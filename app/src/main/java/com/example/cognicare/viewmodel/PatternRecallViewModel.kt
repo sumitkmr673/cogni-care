@@ -2,13 +2,25 @@ package com.example.cognicare.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cognicare.core.game.MAX_GAME_LEVEL
+import com.example.cognicare.core.game.MIN_GAME_LEVEL
+import com.example.cognicare.core.game.nextLevelAfter
+import com.example.cognicare.core.game.patternRecallLevel
+import com.example.cognicare.data.local.AppPreferences
+import com.example.cognicare.data.model.GameOutcome
+import com.example.cognicare.data.model.GameType
+import com.example.cognicare.repository.AuthRepository
+import com.example.cognicare.repository.CareRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -39,11 +51,20 @@ data class PatternRecallUiState(
     val highlightedColor: PatternColor? = null,
     val round: Int = 1,
     val mistakesThisRound: Int = 0,
-    val roundsCompleted: Int = 0
+    val roundsCompleted: Int = 0,
+    /** Across the whole game, unlike [mistakesThisRound] which resets each round — reported to the backend. */
+    val totalMistakes: Int = 0,
+    /** Rounds needed to finish this game, set from the patient's level — see [patternRecallLevel]. */
+    val winRound: Int = WIN_ROUND,
+    val level: Int = MIN_GAME_LEVEL,
+    val maxLevel: Int = MAX_GAME_LEVEL,
+    /** False until the stored level has loaded and the first sequence is built. */
+    val isReady: Boolean = false
 ) {
     val isComplete: Boolean get() = phase == PatternPhase.COMPLETE
 
     companion object {
+        /** Default rounds, used at level 1 and by tests that construct a bare engine. */
         const val WIN_ROUND = 5
 
         /** Ending gently after repeated misses avoids an endless, discouraging retry loop. */
@@ -55,14 +76,26 @@ data class PatternRecallUiState(
  * Simon-says rules with no timing or Android dependencies, so every transition is testable.
  * Taps outside [PatternPhase.INPUT] are ignored, which is what keeps stray taps during
  * playback or pauses from corrupting a round.
+ *
+ * [winRound] and [level] come from the patient's stored level; both default to the level-1
+ * values so an engine built with no arguments behaves exactly as it always has.
  */
-class PatternRecallEngine(private val random: Random = Random.Default) {
+class PatternRecallEngine(
+    private val random: Random = Random.Default,
+    private val winRound: Int = PatternRecallUiState.WIN_ROUND,
+    private val level: Int = MIN_GAME_LEVEL
+) {
 
     var state: PatternRecallUiState = PatternRecallUiState()
         private set
 
     fun startGame(): PatternRecallUiState {
-        state = PatternRecallUiState(sequence = listOf(randomColor()))
+        state = PatternRecallUiState(
+            sequence = listOf(randomColor()),
+            winRound = winRound,
+            level = level,
+            isReady = true
+        )
         return state
     }
 
@@ -82,11 +115,22 @@ class PatternRecallEngine(private val random: Random = Random.Default) {
 
         if (current.sequence.getOrNull(current.playerInput.size) != color) {
             val mistakes = current.mistakesThisRound + 1
+            val totalMistakes = current.totalMistakes + 1
             return if (mistakes >= PatternRecallUiState.MAX_MISTAKES_PER_ROUND) {
-                state = current.copy(phase = PatternPhase.COMPLETE, playerInput = emptyList(), mistakesThisRound = mistakes)
+                state = current.copy(
+                    phase = PatternPhase.COMPLETE,
+                    playerInput = emptyList(),
+                    mistakesThisRound = mistakes,
+                    totalMistakes = totalMistakes
+                )
                 TapOutcome.GAME_COMPLETE
             } else {
-                state = current.copy(phase = PatternPhase.MISTAKE, playerInput = emptyList(), mistakesThisRound = mistakes)
+                state = current.copy(
+                    phase = PatternPhase.MISTAKE,
+                    playerInput = emptyList(),
+                    mistakesThisRound = mistakes,
+                    totalMistakes = totalMistakes
+                )
                 TapOutcome.MISTAKE
             }
         }
@@ -98,7 +142,7 @@ class PatternRecallEngine(private val random: Random = Random.Default) {
         }
 
         val roundsCompleted = current.roundsCompleted + 1
-        return if (current.round >= PatternRecallUiState.WIN_ROUND) {
+        return if (current.round >= current.winRound) {
             state = current.copy(playerInput = input, phase = PatternPhase.COMPLETE, roundsCompleted = roundsCompleted)
             TapOutcome.GAME_COMPLETE
         } else {
@@ -125,28 +169,52 @@ class PatternRecallEngine(private val random: Random = Random.Default) {
         }
     }
 
+    /** True when the patient finished every round rather than running out of attempts. */
+    fun clearedLevel(): Boolean = state.roundsCompleted >= state.winRound
+
     private fun randomColor(): PatternColor = PatternColor.entries[random.nextInt(PatternColor.entries.size)]
 }
 
 @HiltViewModel
-class PatternRecallViewModel @Inject constructor() : ViewModel() {
+class PatternRecallViewModel @Inject constructor(
+    private val careRepository: CareRepository,
+    private val authRepository: AuthRepository,
+    private val preferences: AppPreferences
+) : ViewModel() {
 
-    private val engine = PatternRecallEngine()
+    // Built once the stored level is known, so rounds and playback speed match the patient.
+    private var engine = PatternRecallEngine()
 
-    private val _uiState = MutableStateFlow(engine.startGame())
+    private val _uiState = MutableStateFlow(PatternRecallUiState())
     val uiState: StateFlow<PatternRecallUiState> = _uiState.asStateFlow()
 
     /** The single playback/pause job; replaced (never duplicated) whenever a new one starts. */
     private var sequenceJob: Job? = null
+    private var startedAtMillis = System.currentTimeMillis()
+    private var hasReportedCompletion = false
+    private var highlightMs = patternRecallLevel(MIN_GAME_LEVEL).highlightMs
+    private var gapMs = patternRecallLevel(MIN_GAME_LEVEL).gapMs
 
     init {
-        runSequence(pauseMs = 0L)
+        viewModelScope.launch {
+            val tuning = patternRecallLevel(preferences.currentGameLevel(GameType.PATTERN_RECALL))
+            highlightMs = tuning.highlightMs
+            gapMs = tuning.gapMs
+            engine = PatternRecallEngine(winRound = tuning.winRound, level = tuning.level)
+            engine.startGame()
+            startedAtMillis = System.currentTimeMillis()
+            runSequence(pauseMs = 0L)
+        }
     }
 
     fun onColorTap(color: PatternColor) {
         when (engine.tap(color)) {
             TapOutcome.IGNORED -> Unit
-            TapOutcome.CORRECT, TapOutcome.GAME_COMPLETE -> publish()
+            TapOutcome.CORRECT -> publish()
+            TapOutcome.GAME_COMPLETE -> {
+                publish()
+                reportCompletionOnce()
+            }
             TapOutcome.ROUND_COMPLETE -> {
                 publish()
                 runSequence(ROUND_COMPLETE_PAUSE_MS) { engine.nextRound() }
@@ -155,6 +223,39 @@ class PatternRecallViewModel @Inject constructor() : ViewModel() {
                 publish()
                 runSequence(MISTAKE_PAUSE_MS) { engine.replayRound() }
             }
+        }
+    }
+
+    // No app-side backend game code exists for Pattern Recall (see repository/GameCodeMapping.kt),
+    // so the network call no-ops there — but the level still advances locally, which is what the
+    // patient actually experiences.
+    private fun reportCompletionOnce() {
+        if (hasReportedCompletion) return
+        hasReportedCompletion = true
+        viewModelScope.launch {
+            val state = engine.state
+            // The screen navigates away as soon as the game completes, cancelling this scope;
+            // NonCancellable keeps the level from being silently lost.
+            withContext(NonCancellable) {
+                preferences.setGameLevel(
+                    GameType.PATTERN_RECALL,
+                    nextLevelAfter(state.level, engine.clearedLevel())
+                )
+            }
+
+            if (authRepository.session.first() == null) return@launch
+            val elapsedMs = System.currentTimeMillis() - startedAtMillis
+            careRepository.recordGameCompletion(
+                GameType.PATTERN_RECALL,
+                GameOutcome(
+                    scorePercent = state.roundsCompleted * 100.0 / state.winRound,
+                    correctAnswers = state.roundsCompleted,
+                    totalQuestions = state.winRound,
+                    responseTimeMs = elapsedMs.toInt(),
+                    mistakes = state.totalMistakes,
+                    difficultyLevel = state.level
+                )
+            )
         }
     }
 
@@ -168,10 +269,10 @@ class PatternRecallViewModel @Inject constructor() : ViewModel() {
             for (color in engine.state.sequence) {
                 engine.highlight(color)
                 publish()
-                delay(HIGHLIGHT_MS)
+                delay(highlightMs)
                 engine.highlight(null)
                 publish()
-                delay(GAP_MS)
+                delay(gapMs)
             }
             engine.beginInput()
             publish()
@@ -184,8 +285,6 @@ class PatternRecallViewModel @Inject constructor() : ViewModel() {
 
     private companion object {
         const val START_DELAY_MS = 500L
-        const val HIGHLIGHT_MS = 650L
-        const val GAP_MS = 300L
         const val ROUND_COMPLETE_PAUSE_MS = 900L
         const val MISTAKE_PAUSE_MS = 1_400L
     }

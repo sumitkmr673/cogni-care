@@ -1,0 +1,14 @@
+# The models, for the machine with the NVIDIA GPU. Large download — several GB with CUDA libraries.
+-r requirements.txt
+
+# Prebuilt CUDA 12.4 wheels for llama-cpp-python; building it from source on Windows needs
+# Visual Studio and the CUDA toolkit.
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
+llama-cpp-python>=0.3.4
+
+faster-whisper>=1.1
+# CUDA 12 libraries both models load on the GPU (see app/cuda.py): the runtime and cuBLAS for
+# llama-cpp-python and faster-whisper, cuDNN for faster-whisper.
+nvidia-cuda-runtime-cu12
+nvidia-cublas-cu12
+nvidia-cudnn-cu12==9.*

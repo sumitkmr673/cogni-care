@@ -72,13 +72,13 @@ fun DailyRecallScreen(
         if (state.transcript.isNotEmpty()) {
             PatientPrimaryButton(
                 text = stringResource(R.string.daily_recall_done),
-                onClick = onComplete,
+                onClick = { viewModel.recordCompletion(); onComplete() },
                 showArrow = false
             )
         } else {
             TextLinkButton(
                 text = stringResource(R.string.daily_recall_skip),
-                onClick = onComplete,
+                onClick = { viewModel.recordCompletion(); onComplete() },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }

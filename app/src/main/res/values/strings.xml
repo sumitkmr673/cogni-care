@@ -27,8 +27,6 @@
     <string name="cd_open_settings">open settings</string>
     <string name="cd_change_patient">Change patient</string>
     <string name="cd_step_progress">Step %1$d of %2$d: %3$s</string>
-    <string name="cd_pin_progress">%1$d of %2$d PIN digits entered</string>
-    <string name="cd_delete_digit">Delete last digit</string>
     <string name="cd_show_password">Show password</string>
     <string name="cd_hide_password">Hide password</string>
     <string name="cd_trend_chart">Memory went from %1$d to %2$d and attention from %3$d to %4$d over this period.</string>
@@ -64,6 +62,7 @@
     <string name="language_title">Choose your language</string>
     <string name="language_lead">Select the language you are most comfortable using.</string>
     <string name="language_selected">Selected: %1$s</string>
+    <string name="language_coming_soon">Coming soon · shown in English for now</string>
 
     <!-- Consent -->
     <string name="consent_step">Your privacy matters</string>
@@ -81,19 +80,24 @@
     <!-- Identify (role selection) -->
     <string name="identify_step">Who is using CogniCare</string>
     <string name="identify_title">Who is using CogniCare today?</string>
-    <string name="identify_lead">Choose one option to continue.</string>
+    <string name="identify_lead">Tap the big button to begin.</string>
     <string name="identify_patient_title">I am a Patient</string>
     <string name="identify_patient_body">Play memory games and see today\'s reminders</string>
-    <string name="identify_caregiver_title">I am a Caregiver</string>
-    <string name="identify_caregiver_body">For the doctor who looks after the patient</string>
+    <string name="identify_caregiver_link">If you are a caregiver or doctor, tap here</string>
     <string name="identify_demo_note">Demo only: Meera Sharma · synthetic patient profile</string>
 
     <!-- Patient sign in -->
     <string name="patient_login_title">Welcome back</string>
-    <string name="patient_login_lead">Enter your %1$d-digit PIN.</string>
-    <string name="patient_login_error">That PIN did not match. Let\'s try again.</string>
-    <string name="patient_login_help">Forgot your PIN? Ask your doctor or family.</string>
-    <string name="patient_login_demo_note">Demo PIN: %1$s</string>
+    <string name="patient_login_lead">Tap the button and say your name, or type it below.</string>
+    <string name="patient_login_type_label">Or type your name</string>
+    <string name="patient_login_name_field">Your name</string>
+    <string name="patient_login_error">That doesn\'t match the name we have. Let\'s try again.</string>
+    <string name="patient_login_help">Need help? Ask your caregiver or doctor.</string>
+    <string name="patient_login_demo_note">Demo patient name: %1$s</string>
+    <string name="patient_login_setup_again">Caregiver or doctor? Set up this device again</string>
+    <string name="patient_login_locked_title">Let\'s get some help</string>
+    <string name="patient_login_locked_body">We couldn\'t recognise the name after several tries. Please ask your caregiver or doctor to help you sign in.</string>
+    <string name="patient_login_locked_caregiver_note">For the caregiver or doctor: this device locked after %1$d unrecognised names. Setting the device up again unlocks it.</string>
 
     <!-- Caregiver sign in -->
     <string name="caregiver_login_title">Sign in as caregiver</string>
@@ -102,10 +106,17 @@
     <string name="label_password">Password</string>
     <string name="error_invalid_email">Enter a valid email address.</string>
     <string name="error_invalid_credentials">Email or password is incorrect.</string>
+    <string name="error_network">Couldn\'t reach the server. Check the connection and try again.</string>
     <string name="caregiver_login_demo_title">Demo caregiver</string>
     <string name="caregiver_login_demo_body">%1$s · password %2$s</string>
     <string name="caregiver_login_safety_title">Human review stays in charge</string>
     <string name="caregiver_login_safety_body">CogniCare shows indicators from game activity. Clinical decisions remain with you.</string>
+
+    <!-- Patient device setup (one-time; done by the patient or a caregiver on their behalf) -->
+    <string name="device_setup_title">Set up this device</string>
+    <string name="device_setup_lead">Enter the patient\'s sign-in details once. After that, the patient just says or types their name.</string>
+    <string name="device_setup_submit">Set up device</string>
+    <string name="device_setup_demo_body">Demo patient: %1$s · password %2$s</string>
 
     <!-- Safety -->
     <string name="safety_title">AI-assisted insights · review required</string>
@@ -128,6 +139,8 @@
     <string name="games_eyebrow">Memory games</string>
     <string name="games_title">Choose a game</string>
     <string name="games_lead">Take your time. There is no rush.</string>
+    <string name="game_level">Level %1$d of %2$d</string>
+    <string name="game_level_up">New level unlocked!</string>
     <string name="game_memory_match">Memory Match</string>
     <string name="game_memory_match_desc">Find the matching picture pairs</string>
     <string name="game_pattern_recall">Pattern Recall</string>
@@ -331,4 +344,30 @@
     <string name="role_patient">Patient</string>
     <string name="role_doctor_caregiver">Doctor · Caregiver</string>
     <string name="doctor_name_format">Dr. %1$s</string>
+
+    <!-- Voice assistant (floating robot button) -->
+    <string name="assistant_open">Open voice helper</string>
+    <string name="assistant_back_to_game">Back to my game</string>
+    <string name="assistant_not_understood">I can help you play a game or go back home. Just say “play a game” or “go home”.</string>
+    <string name="assistant_going_home">Let\'s go home.</string>
+    <!-- Spoken-command word lists: comma-separated phrases in this language, matched as whole words. -->
+    <string name="assistant_games_words">game, games, play</string>
+    <string name="assistant_home_words">home, back, main screen</string>
+
+    <!-- Proactive suggestions. Gentle wording: "not yet" and closing the dialog are never treated as failures. -->
+    <string name="suggestion_medication_question">Did you take your medicine?</string>
+    <string name="suggestion_medication_yes">Yes, I took it</string>
+    <string name="suggestion_medication_not_yet">Not yet</string>
+    <string name="suggestion_medication_yes_words">yes, yeah, yep, took, taken, done, already</string>
+    <string name="suggestion_medication_not_yet_words">no, not yet, not, later, nope, haven\'t, didn\'t, forgot</string>
+    <string name="suggestion_game_question">Would you like to play a memory game?</string>
+    <string name="suggestion_game_yes">Yes, let\'s play</string>
+    <string name="suggestion_game_later">Maybe later</string>
+    <string name="suggestion_game_yes_words">yes, yeah, sure, okay, ok, play, let\'s go, alright</string>
+    <string name="suggestion_game_later_words">no, later, not now, maybe later, not, nope, tired</string>
+    <string name="suggestion_ack_medication_taken">Thank you — well done for remembering.</string>
+    <string name="suggestion_ack_medication_not_yet">That\'s okay. I\'ll ask again a little later.</string>
+    <string name="suggestion_ack_game_yes">Lovely! Let\'s play.</string>
+    <string name="suggestion_ack_game_later">That\'s fine. Maybe later.</string>
+    <string name="suggestion_not_understood">I didn\'t quite catch that. You can say it again, or tap an answer below.</string>
 </resources>

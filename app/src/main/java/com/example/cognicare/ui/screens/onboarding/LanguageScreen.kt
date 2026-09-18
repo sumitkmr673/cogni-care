@@ -42,7 +42,12 @@ fun LanguageScreen(
             AppLanguage.entries.forEach { language ->
                 OptionRow(
                     title = language.nativeName,
-                    subtitle = language.englishName.takeIf { it != language.nativeName },
+                    // Untranslated languages say so rather than silently falling back to English.
+                    subtitle = if (language.isTranslated) {
+                        language.englishName.takeIf { it != language.nativeName }
+                    } else {
+                        stringResource(R.string.language_coming_soon)
+                    },
                     selected = language == selected,
                     onClick = { onSelect(language) }
                 )

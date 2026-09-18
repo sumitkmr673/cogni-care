@@ -171,7 +171,17 @@ private fun LanguageDialog(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(language.nativeName, style = MaterialTheme.typography.bodyLarge)
-                            Text(language.englishName, style = MaterialTheme.typography.bodySmall, color = CaregiverTheme.colors.mutedText)
+                            // Mirrors the onboarding picker: an untranslated language is labelled,
+                            // never silently served English.
+                            Text(
+                                text = if (language.isTranslated) {
+                                    language.englishName
+                                } else {
+                                    stringResource(R.string.language_coming_soon)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = CaregiverTheme.colors.mutedText
+                            )
                         }
                     }
                 }
