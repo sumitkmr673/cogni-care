@@ -1,0 +1,372 @@
+<resources>
+    <string name="app_name">CogniCare</string>
+
+    <!-- Brand & shared chrome -->
+    <string name="brand_tagline_patient">স্মৃতি যত্ন</string>
+    <string name="brand_tagline_caregiver">সেবাদাতার সহায়তা</string>
+    <string name="footer_help">সাহায্য দরকার? আপনার ডাক্তার বা পরিবারের কাউকে জিজ্ঞাসা করুন।</string>
+    <string name="footer_privacy">গোপনীয়তা-প্রথম ডেমো · শুধুমাত্র কৃত্রিম তথ্য</string>
+    <string name="demo_badge">কৃত্রিম প্রদর্শনী তথ্য</string>
+
+    <!-- Actions -->
+    <string name="action_back">পিছনে</string>
+    <string name="action_go_back">পিছনে যান</string>
+    <string name="action_continue">চালিয়ে যান</string>
+    <string name="action_details">বিবরণ</string>
+    <string name="action_see_all">সব দেখুন</string>
+    <string name="action_view_performance">সম্পূর্ণ পারফরম্যান্স দেখুন</string>
+    <string name="action_sign_in">সাইন ইন করুন</string>
+    <string name="action_sign_out">সাইন আউট করুন</string>
+    <string name="action_close">বন্ধ করুন</string>
+    <string name="action_open_reports">বিস্তারিত রিপোর্ট খুলুন</string>
+    <string name="action_use_demo">ডেমো ব্যবহার করুন</string>
+
+    <!-- Accessibility -->
+    <string name="cd_selected">নির্বাচিত</string>
+    <string name="cd_open_alerts">সতর্কতা খুলুন</string>
+    <string name="cd_open_settings">সেটিংস খুলুন</string>
+    <string name="cd_change_patient">রোগী পরিবর্তন করুন</string>
+    <string name="cd_step_progress">ধাপ %1$d / %2$d: %3$s</string>
+    <string name="cd_show_password">পাসওয়ার্ড দেখান</string>
+    <string name="cd_hide_password">পাসওয়ার্ড লুকান</string>
+    <string name="cd_trend_chart">এই সময়ে স্মৃতি %1$d থেকে %2$d এবং মনোযোগ %3$d থেকে %4$d হয়েছে।</string>
+
+    <!-- Greetings -->
+    <string name="greeting_morning">সুপ্রভাত,</string>
+    <string name="greeting_afternoon">শুভ অপরাহ্ন,</string>
+    <string name="greeting_evening">শুভ সন্ধ্যা,</string>
+
+    <!-- Onboarding steps -->
+    <string name="step_language">ভাষা</string>
+    <string name="step_consent">সম্মতি</string>
+    <string name="step_identify">পরিচয়</string>
+    <string name="step_sign_in">সাইন ইন</string>
+    <string name="step_eyebrow">ধাপ %1$d / %2$d · %3$s</string>
+
+    <!-- Welcome -->
+    <string name="welcome_eyebrow">ঘরে বসে স্মৃতি যত্ন</string>
+    <string name="welcome_mode">AI-সহায়ক জ্ঞানমূলক খেলা</string>
+    <string name="welcome_title">প্রতিদিনের খেলা যা</string>
+    <string name="welcome_emphasis">আপনার মনকে সক্রিয় রাখে।</string>
+    <string name="welcome_body">CogniCare সহজ স্মৃতি খেলা ও দৈনিক অনুস্মারক দেয়। আপনার ডাক্তার দেখতে পারেন আপনি কেমন আছেন এবং আপনার যত্নে সহায়তা করতে পারেন।</string>
+    <string name="welcome_start">শুরু করুন</string>
+    <string name="welcome_demo_patient">ডেমো রোগী দিয়ে শুরু করুন</string>
+    <string name="welcome_demo_caregiver">ডেমো সেবাদাতা ড্যাশবোর্ড খুলুন</string>
+    <string name="welcome_demo_loading">ডেমো খোলা হচ্ছে…</string>
+    <string name="welcome_note_voice">কণ্ঠ ও স্পর্শ</string>
+    <string name="welcome_note_voice_sub">আপনার ভাষায়</string>
+    <string name="welcome_note_review">ডাক্তার পর্যালোচিত</string>
+    <string name="welcome_note_review_sub">তথ্য, কখনও রোগনির্ণয় নয়</string>
+
+    <!-- Language -->
+    <string name="language_title">আপনার ভাষা বেছে নিন</string>
+    <string name="language_lead">যে ভাষায় আপনি সবচেয়ে স্বচ্ছন্দ তা বেছে নিন।</string>
+    <string name="language_selected">নির্বাচিত: %1$s</string>
+    <string name="language_coming_soon">শীঘ্রই আসছে · আপাতত ইংরেজিতে দেখাবে</string>
+
+    <!-- Consent -->
+    <string name="consent_step">আপনার গোপনীয়তা গুরুত্বপূর্ণ</string>
+    <string name="consent_title">শুরু করার আগে</string>
+    <string name="consent_lead">অনুগ্রহ করে পড়ুন CogniCare আপনার খেলা ও অনুস্মারকের তথ্য কীভাবে ব্যবহার করে।</string>
+    <string name="consent_activity_title">খেলার কার্যকলাপ</string>
+    <string name="consent_activity_body">CogniCare রেকর্ড করে আপনি কীভাবে স্মৃতি খেলা খেলেন এবং কোন দৈনিক অনুস্মারক সম্পন্ন করেন।</string>
+    <string name="consent_insights_title">আপনার ডাক্তারের জন্য তথ্য</string>
+    <string name="consent_insights_body">আপনার ডাক্তার যত্নে সহায়তার জন্য অগ্রগতির ধারা দেখেন। এগুলি তথ্য, চিকিৎসাগত রোগনির্ণয় নয়।</string>
+    <string name="consent_control_title">আপনার নিয়ন্ত্রণ</string>
+    <string name="consent_control_body">নিরাপদ সংযোগে সিঙ্ক না হওয়া পর্যন্ত তথ্য এই ডিভাইসেই থাকে। আপনি বা আপনার পরিবার যেকোনো সময় থামাতে বলতে পারেন।</string>
+    <string name="consent_agree_text">আমি বুঝেছি এবং চালিয়ে যেতে সম্মত।</string>
+    <string name="consent_agree">আমি সম্মত</string>
+
+    <!-- Identify (role selection) -->
+    <string name="identify_step">কে CogniCare ব্যবহার করছেন</string>
+    <string name="identify_title">আজ কে CogniCare ব্যবহার করছেন?</string>
+    <string name="identify_lead">শুরু করতে বড় বোতামে চাপ দিন।</string>
+    <string name="identify_patient_title">আমি একজন রোগী</string>
+    <string name="identify_patient_body">স্মৃতি খেলা খেলুন ও আজকের অনুস্মারক দেখুন</string>
+    <string name="identify_caregiver_link">আপনি সেবাদাতা বা ডাক্তার হলে এখানে চাপ দিন</string>
+    <string name="identify_demo_note">শুধু ডেমো: মীরা শর্মা · কৃত্রিম রোগী প্রোফাইল</string>
+
+    <!-- Patient sign in -->
+    <string name="patient_login_title">আবার স্বাগতম</string>
+    <string name="patient_login_lead">বোতামে চাপ দিয়ে আপনার নাম বলুন, বা নিচে লিখুন।</string>
+    <string name="patient_login_type_label">অথবা আপনার নাম লিখুন</string>
+    <string name="patient_login_name_field">আপনার নাম</string>
+    <string name="patient_login_error">এটি আমাদের কাছে থাকা নামের সঙ্গে মিলছে না। আবার চেষ্টা করি।</string>
+    <string name="patient_login_help">সাহায্য দরকার? আপনার সেবাদাতা বা ডাক্তারকে জিজ্ঞাসা করুন।</string>
+    <string name="patient_login_demo_note">ডেমো রোগীর নাম: %1$s</string>
+    <string name="patient_login_setup_again">সেবাদাতা বা ডাক্তার? এই ডিভাইস আবার সেট করুন</string>
+    <string name="patient_login_locked_title">চলুন কিছু সাহায্য নিই</string>
+    <string name="patient_login_locked_body">কয়েকবার চেষ্টার পরেও আমরা নামটি চিনতে পারিনি। সাইন ইন করতে অনুগ্রহ করে আপনার সেবাদাতা বা ডাক্তারের সাহায্য নিন।</string>
+    <string name="patient_login_locked_caregiver_note">সেবাদাতা বা ডাক্তারের জন্য: %1$d বার নাম চেনা না যাওয়ায় এই ডিভাইস লক হয়েছে। ডিভাইস আবার সেট করলে এটি খুলে যাবে।</string>
+
+    <!-- Caregiver sign in -->
+    <string name="caregiver_login_title">সেবাদাতা হিসেবে সাইন ইন করুন</string>
+    <string name="caregiver_login_subtitle">রোগীর দেখাশোনা করা ডাক্তারের জন্য। খেলার কার্যকলাপ, অনুস্মারক ও যত্ন-সংক্রান্ত তথ্য দেখুন।</string>
+    <string name="label_email">ইমেল</string>
+    <string name="label_password">পাসওয়ার্ড</string>
+    <string name="error_invalid_email">একটি বৈধ ইমেল ঠিকানা দিন।</string>
+    <string name="error_invalid_credentials">ইমেল বা পাসওয়ার্ড ভুল।</string>
+    <string name="error_network">সার্ভারে পৌঁছানো যায়নি। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।</string>
+    <string name="caregiver_login_demo_title">ডেমো সেবাদাতা</string>
+    <string name="caregiver_login_demo_body">%1$s · পাসওয়ার্ড %2$s</string>
+    <string name="caregiver_login_safety_title">মানবিক পর্যালোচনাই চূড়ান্ত</string>
+    <string name="caregiver_login_safety_body">CogniCare খেলার কার্যকলাপ থেকে ইঙ্গিত দেখায়। চিকিৎসাগত সিদ্ধান্ত আপনার হাতেই থাকে।</string>
+
+    <!-- Patient device setup -->
+    <string name="device_setup_title">এই ডিভাইস সেট করুন</string>
+    <string name="device_setup_lead">রোগীর সাইন-ইন তথ্য একবার দিন। এরপর রোগী শুধু নিজের নাম বলবেন বা লিখবেন।</string>
+    <string name="device_setup_submit">ডিভাইস সেট করুন</string>
+    <string name="device_setup_demo_body">ডেমো রোগী: %1$s · পাসওয়ার্ড %2$s</string>
+
+    <!-- Safety -->
+    <string name="safety_title">AI-সহায়ক তথ্য · পর্যালোচনা প্রয়োজন</string>
+    <string name="safety_body">ইঙ্গিতগুলি খেলার কার্যকলাপ থেকে আসে এবং চিকিৎসাগত রোগনির্ণয় নয়। যেকোনো উদ্বেগ চিকিৎসাগতভাবে নিশ্চিত করুন।</string>
+    <string name="safety_tag">DEMO</string>
+    <string name="safety_tag_draft">DRAFT</string>
+
+    <!-- Patient home -->
+    <string name="patient_home_lead">আজকের জন্য আপনার পরিকল্পনা এখানে।</string>
+    <string name="patient_home_play_title">আজকের খেলা খেলুন</string>
+    <string name="patient_home_play_body">স্মৃতি ও মনোযোগের জন্য সহজ অনুশীলন</string>
+    <string name="patient_home_today">আজকের কার্যকলাপ</string>
+    <string name="patient_home_progress">%2$d-এর মধ্যে %1$d সম্পন্ন</string>
+    <string name="patient_home_empty">আজ আর কিছু পরিকল্পিত নেই। দিনটি ভালো কাটুক!</string>
+    <string name="patient_reminder_mark_done">সম্পন্ন চিহ্নিত করুন</string>
+    <string name="patient_reminder_done">সম্পন্ন · ফেরাতে চাপ দিন</string>
+    <string name="patient_switch_user">আপনি %1$s নন? ব্যবহারকারী বদলান</string>
+
+    <!-- Games -->
+    <string name="games_eyebrow">স্মৃতি খেলা</string>
+    <string name="games_title">একটি খেলা বেছে নিন</string>
+    <string name="games_lead">সময় নিন। কোনো তাড়া নেই।</string>
+    <string name="game_level">স্তর %1$d / %2$d</string>
+    <string name="game_level_up">নতুন স্তর খুলে গেল!</string>
+    <string name="game_memory_match">জোড়া মেলানো</string>
+    <string name="game_memory_match_desc">মিলে যাওয়া ছবির জোড়া খুঁজুন</string>
+    <string name="game_pattern_recall">ক্রম মনে রাখা</string>
+    <string name="game_pattern_recall_desc">রঙের ক্রম মনে রাখুন</string>
+    <string name="game_object_naming">বস্তুর নাম</string>
+    <string name="game_object_naming_desc">ছবির নাম বলুন বা বেছে নিন</string>
+    <string name="game_daily_recall">দৈনন্দিন স্মরণ</string>
+    <string name="game_daily_recall_desc">আপনার দিনের কথা বলুন</string>
+    <string name="game_orientation">দিক-বোধ</string>
+    <string name="game_orientation_desc">আজ কী বার? আমরা কোথায়?</string>
+    <string name="game_family_identification">পরিবার চেনা</string>
+    <string name="game_family_identification_desc">প্রিয়জনের মুখ চিনুন</string>
+    <string name="game_placeholder_eyebrow">শীঘ্রই আসছে</string>
+    <string name="game_placeholder_body">এই খেলাটি প্রায় প্রস্তুত। আপাতত অন্য একটি খেলা চেষ্টা করুন।</string>
+    <string name="game_back_to_games">খেলায় ফিরুন</string>
+    <string name="game_complete_title">আজ দারুণ করেছেন!</string>
+    <string name="game_complete_body">আপনি খেলাটি শেষ করেছেন। আপনার ডাক্তার দেখবেন আপনি কেমন আছেন।</string>
+
+    <!-- Memory Match -->
+    <string name="memory_match_title">মিলে যাওয়া জোড়া খুঁজুন</string>
+    <string name="memory_match_lead">দুটি কার্ডে চাপ দিয়ে দেখুন সেগুলি মেলে কিনা।</string>
+    <string name="memory_match_pairs_found">%2$d-এর মধ্যে %1$d জোড়া পাওয়া গেছে</string>
+    <string name="cd_face_down_card">উল্টানো কার্ড</string>
+
+    <!-- Pattern Recall -->
+    <string name="pattern_recall_title">ক্রমটি আবার করুন</string>
+    <string name="pattern_recall_lead">রঙগুলি জ্বলে ওঠা দেখুন, তারপর একই ক্রমে সেগুলিতে চাপ দিন।</string>
+    <string name="pattern_recall_round">রাউন্ড %1$d / %2$d</string>
+    <string name="pattern_recall_watch">মন দিয়ে দেখুন</string>
+    <string name="pattern_recall_your_turn">আপনার পালা</string>
+    <string name="pattern_recall_try_again">ঠিক হয়নি — আবার দেখুন</string>
+    <string name="pattern_recall_well_done">চমৎকার!</string>
+    <string name="color_red">লাল</string>
+    <string name="color_green">সবুজ</string>
+    <string name="color_blue">নীল</string>
+    <string name="color_yellow">হলুদ</string>
+
+    <!-- Speech to text -->
+    <string name="speech_button_idle">বলতে চাপ দিন</string>
+    <string name="speech_button_listening">শুনছি… থামাতে চাপ দিন</string>
+    <string name="speech_listening_hint">আমি শুনছি। আপনার উত্তর বলুন।</string>
+    <string name="speech_heard">“%1$s”</string>
+    <string name="speech_error_no_match">দুঃখিত, আমি বুঝতে পারিনি। আবার চেষ্টা করতে চাপ দিন, বা একটি উত্তর বেছে নিন।</string>
+    <string name="speech_error_permission">CogniCare-এর জন্য মাইক্রোফোন বন্ধ আছে। আপনি তবুও উত্তর বেছে নিতে পারেন।</string>
+    <string name="speech_error_other">কণ্ঠ এখন কাজ করছে না। আপনি তবুও উত্তর বেছে নিতে পারেন।</string>
+    <string name="speech_unavailable">এই ডিভাইসে কণ্ঠে উত্তর দেওয়া যায় না। অনুগ্রহ করে নিচ থেকে উত্তর বেছে নিন।</string>
+
+    <!-- Voice quiz (shared) -->
+    <string name="voice_quiz_progress">প্রশ্ন %1$d / %2$d</string>
+    <string name="voice_quiz_or_tap">অথবা আপনার উত্তরে চাপ দিন</string>
+    <string name="voice_quiz_you_said">আপনি বলেছেন “%1$s”।</string>
+    <string name="voice_quiz_feedback_correct">ঠিক বলেছেন — চমৎকার!</string>
+    <string name="voice_quiz_feedback_gentle">উত্তরটি হলো %1$s। ঠিক আছে — চলুন এগিয়ে যাই।</string>
+
+    <!-- Orientation -->
+    <string name="orientation_title">আজ ও আমরা কোথায়</string>
+    <string name="orientation_q_year">এটি কোন বছর?</string>
+    <string name="orientation_q_month">এটি কোন মাস?</string>
+    <string name="orientation_q_date">আজকের তারিখ কত?</string>
+    <string name="orientation_q_day">আজ সপ্তাহের কোন দিন?</string>
+    <string name="orientation_q_place">আমরা এখন কোথায়?</string>
+    <string name="orientation_place_home">বাড়ি</string>
+    <string name="orientation_place_hospital">হাসপাতাল</string>
+    <string name="orientation_place_market">বাজার</string>
+
+    <!-- Family Identification -->
+    <string name="family_title">ইনি কে?</string>
+    <string name="family_prompt">বলতে পারবেন ইনি কে?</string>
+    <string name="family_answer_label">%1$s, আপনার %2$s</string>
+    <string name="family_answer_self">আপনি, %1$s</string>
+
+    <!-- Object Naming -->
+    <string name="object_naming_title">বস্তুর নাম বলুন</string>
+    <string name="object_naming_prompt">একে কী বলে?</string>
+    <string name="object_watch">ঘড়ি</string>
+    <string name="object_pencil">পেনসিল</string>
+    <string name="object_apple">আপেল</string>
+    <string name="object_key">চাবি</string>
+    <string name="object_dog">কুকুর</string>
+
+    <!-- Daily Recall -->
+    <string name="daily_recall_title">আপনার দিনের কথা বলুন</string>
+    <string name="daily_recall_lead">সময় নিন। আপনি কী খেয়েছেন, কার সঙ্গে দেখা হয়েছে, বা কেমন বোধ করছেন তা বলতে পারেন।</string>
+    <string name="daily_recall_you_said">আপনি যা বলেছেন</string>
+    <string name="daily_recall_done">আমার বলা শেষ</string>
+    <string name="daily_recall_skip">আজ কথা বলতে চাই না</string>
+
+    <!-- Caregiver overview -->
+    <string name="overview_eyebrow">সেবাদাতার সংক্ষিপ্ত চিত্র</string>
+    <string name="dashboard_tagline">জ্ঞানমূলক খেলার কার্যকলাপ থেকে স্পষ্ট, সহানুভূতিশীল তথ্য।</string>
+    <string name="label_patient">রোগী</string>
+    <string name="snapshot_eyebrow">রোগীর সংক্ষিপ্ত চিত্র</string>
+    <string name="snapshot_meta">%1$s · %2$s · খেলার কার্যকলাপের সারসংক্ষেপ</string>
+    <string name="sync_synced_today">কার্যকলাপ আজ সিঙ্ক হয়েছে</string>
+    <string name="sync_waiting">সিঙ্কের অপেক্ষায়</string>
+    <string name="stat_games_completed">সম্পন্ন খেলা</string>
+    <string name="stat_average_accuracy">গড় নির্ভুলতা</string>
+    <string name="stat_memory_score">স্মৃতি স্কোর</string>
+    <string name="stat_attention_score">মনোযোগ স্কোর</string>
+    <string name="stat_game_accuracy">খেলার নির্ভুলতা</string>
+    <string name="stat_response_time">গড় প্রতিক্রিয়া সময়</string>
+    <string name="unit_today">আজ</string>
+    <string name="unit_percent" formatted="false">%</string>
+    <string name="unit_out_of_100">/100</string>
+    <string name="unit_seconds">সে</string>
+    <string name="percent_value">%1$d%%</string>
+    <string name="overview_trend_eyebrow">জ্ঞানমূলক খেলার পারফরম্যান্স</string>
+    <string name="trend_title">পারফরম্যান্সের ধারা</string>
+    <string name="domain_memory">স্মৃতি</string>
+    <string name="domain_attention">মনোযোগ</string>
+    <string name="trend_range">%1$d–%2$d পয়েন্ট</string>
+    <string name="trend_not_enough">ধারা দেখানোর মতো যথেষ্ট খেলার কার্যকলাপ এখনও নেই।</string>
+    <string name="reminders_eyebrow">নিয়মে থাকুন</string>
+    <string name="reminders_title">আসন্ন অনুস্মারক</string>
+    <string name="reminders_empty">কোনো আসন্ন অনুস্মারক নেই।</string>
+    <string name="recent_eyebrow">সাম্প্রতিক কার্যকলাপ</string>
+    <string name="recent_title">সর্বশেষ খেলার সেশন</string>
+    <string name="recent_empty">এখনও কোনো খেলার সেশন নেই।</string>
+    <string name="sync_status_pending">সিঙ্কের অপেক্ষায়</string>
+    <string name="sync_status_synced">সিঙ্ক হয়েছে</string>
+    <string name="sync_status_failed">সিঙ্ক ব্যর্থ</string>
+    <string name="no_patients_title">এখনও কোনো রোগী যুক্ত নেই</string>
+    <string name="no_patients_body">তাদের খেলার কার্যকলাপ ও অনুস্মারক দেখতে একজন রোগী যুক্ত করুন।</string>
+
+    <!-- Performance -->
+    <string name="performance_eyebrow">রোগীর পারফরম্যান্স</string>
+    <string name="performance_title">জ্ঞানমূলক খেলার পারফরম্যান্স</string>
+    <string name="performance_profile_meta">রোগীর প্রোফাইল · %1$s</string>
+    <string name="performance_indicator_note">পারফরম্যান্স সূচকগুলি খেলার কার্যকলাপের ভিত্তিতে, চিকিৎসাগত রোগনির্ণয় নয়।</string>
+    <string name="performance_history_eyebrow">দৈনিক ইতিহাস</string>
+    <string name="breakdown_eyebrow">সব কার্যকলাপ জুড়ে</string>
+    <string name="breakdown_title">খেলাভিত্তিক পারফরম্যান্স</string>
+    <string name="breakdown_row_meta">%1$d সম্পন্ন · সর্বশেষ স্তর %2$d</string>
+    <string name="breakdown_empty">এখনও কোনো খেলা খেলা হয়নি।</string>
+
+    <!-- Caregiver navigation -->
+    <string name="nav_overview">সারসংক্ষেপ</string>
+    <string name="nav_performance">পারফরম্যান্স</string>
+    <string name="nav_alerts">সতর্কতা</string>
+    <string name="nav_suggestions">যত্নের পরামর্শ</string>
+    <string name="nav_settings">সেটিংস</string>
+
+    <!-- Alerts -->
+    <string name="alerts_eyebrow">অবহিত থাকুন</string>
+    <string name="alerts_title">সতর্কতা ও বিজ্ঞপ্তি</string>
+    <string name="alerts_subtitle">বাদ পড়া কার্যকলাপ ও উল্লেখযোগ্য পরিবর্তন এখানে দেখা যাবে।</string>
+    <string name="alerts_planned_title">সতর্কতা ফিড সিঙ্কের সঙ্গে আসবে</string>
+    <string name="alerts_planned_body">রোগীর ডিভাইস থেকে খেলার ফলাফল সিঙ্ক হলে বাদ-পড়া কার্যকলাপ ও পারফরম্যান্স-পরিবর্তনের সতর্কতা দেখা যাবে।</string>
+
+    <!-- Care suggestions -->
+    <string name="suggestions_eyebrow">ব্যক্তিগত যত্ন</string>
+    <string name="suggestions_title">যত্নের পরামর্শ</string>
+    <string name="suggestions_subtitle">খেলার কার্যকলাপ থেকে তৈরি, দৈনন্দিন রুটিনে সহায়তার ভাবনা।</string>
+    <string name="suggestions_safety_title">AI-নির্মিত পরামর্শ · ডাক্তারের পর্যালোচনা প্রয়োজন</string>
+    <string name="suggestions_safety_body">আপনি যাচাই না করা পর্যন্ত পরামর্শগুলি অপর্যালোচিত চিহ্নিত থাকে। অপর্যালোচিত পরামর্শ রোগীকে কখনও দেখানো হয় না।</string>
+    <string name="suggestions_review_title">ভাগ করার আগে পর্যালোচনা করুন</string>
+    <string name="suggestions_review_body">আপনি প্রতিটি পরামর্শ অনুমোদন, সম্পাদনা বা বাতিল করতে পারবেন, এবং কে কখন পর্যালোচনা করেছেন তার নথি থাকবে।</string>
+    <string name="suggestions_planned_title">পরামর্শ শীঘ্রই আসছে</string>
+    <string name="suggestions_planned_body">প্রথমে নিয়মভিত্তিক পরামর্শ আসবে, তারপর খেলার ফলাফল সিঙ্ক হলে AI পরিষেবা থেকে তথ্য।</string>
+
+    <!-- Reports -->
+    <string name="reports_eyebrow">রিপোর্ট ও বিশ্লেষণ</string>
+    <string name="reports_title">বিস্তারিত রিপোর্ট</string>
+    <string name="reports_subtitle">খেলার কার্যকলাপ আরও বিশদে দেখুন।</string>
+    <string name="reports_planned_title">ফিল্টার ও রপ্তানি</string>
+    <string name="reports_planned_body">তারিখের পরিসর, খেলা ও জ্ঞানমূলক ক্ষেত্র অনুসারে ফিল্টার করুন, তারপর যত্নের নথির জন্য রিপোর্ট রপ্তানি করুন।</string>
+
+    <!-- Patients -->
+    <string name="patients_eyebrow">রোগী ব্যবস্থাপনা</string>
+    <string name="patients_title">আপনার রোগীরা</string>
+    <string name="patients_subtitle">কার কার্যকলাপ দেখতে চান তা বেছে নিন।</string>
+    <string name="patients_meta">%1$s · %2$s</string>
+    <string name="patients_add_title">রোগী যুক্ত করুন</string>
+    <string name="patients_add_body">নতুন রোগী যুক্ত করতে রোগী বা তাঁর অভিভাবকের অবহিত সম্মতি প্রয়োজন।</string>
+
+    <!-- Settings -->
+    <string name="settings_eyebrow">পছন্দসমূহ</string>
+    <string name="settings_title">সেটিংস</string>
+    <string name="settings_language">ভাষা</string>
+    <string name="settings_notifications_title">বিজ্ঞপ্তির পছন্দ</string>
+    <string name="settings_notifications_body">কোন সতর্কতা কখন আপনার কাছে পৌঁছাবে তা বেছে নিন। সতর্কতা যুক্ত হলে উপলব্ধ।</string>
+    <string name="settings_privacy_title">গোপনীয়তা ও তথ্য</string>
+    <string name="settings_privacy_body">নিরাপদ সংযোগে সিঙ্ক না হওয়া পর্যন্ত রোগীর তথ্য ডিভাইসে থাকে। CogniCare শুধু খেলার কার্যকলাপ থেকে তথ্য দেখায় এবং কখনও রোগনির্ণয় করে না।</string>
+
+    <!-- Demo reminders -->
+    <string name="reminder_morning_walk">সকালের হাঁটা</string>
+    <string name="reminder_medicine">সকালের ওষুধ নিন</string>
+    <string name="reminder_lunch">পরিবারের সঙ্গে দুপুরের খাবার</string>
+    <string name="reminder_game">আজকের স্মৃতি খেলা সম্পন্ন করুন</string>
+    <string name="reminder_evening_walk">সন্ধ্যার হাঁটা</string>
+    <string name="reminder_care_review">যত্ন পর্যালোচনার অ্যাপয়েন্টমেন্ট</string>
+
+    <!-- Demo family relations -->
+    <string name="relation_grandson">নাতি</string>
+    <string name="relation_son">ছেলে</string>
+    <string name="relation_granddaughter">নাতনি</string>
+    <string name="relation_daughter_in_law">পুত্রবধূ</string>
+    <string name="relation_husband">স্বামী</string>
+
+    <!-- Roles -->
+    <string name="role_patient">রোগী</string>
+    <string name="role_doctor_caregiver">ডাক্তার · সেবাদাতা</string>
+    <string name="doctor_name_format">ডাঃ %1$s</string>
+
+    <!-- Voice assistant -->
+    <string name="assistant_open">কণ্ঠ সহায়ক খুলুন</string>
+    <string name="assistant_back_to_game">খেলায় ফিরুন</string>
+    <string name="assistant_not_understood">আমি আপনাকে খেলা খেলতে বা হোমে ফিরতে সাহায্য করতে পারি। শুধু “খেলা” বা “বাড়ি” বলুন।</string>
+    <string name="assistant_going_home">চলুন হোমে যাই।</string>
+    <string name="assistant_games_words">খেলা, গেম, খেলব, game, play</string>
+    <string name="assistant_home_words">বাড়ি, হোম, ফিরে, ফিরব, home</string>
+
+    <!-- Proactive suggestions -->
+    <string name="suggestion_medication_question">আপনি কি ওষুধ খেয়েছেন?</string>
+    <string name="suggestion_medication_yes">হ্যাঁ, খেয়েছি</string>
+    <string name="suggestion_medication_not_yet">এখনও না</string>
+    <string name="suggestion_medication_yes_words">হ্যাঁ, হাঁ, হ্যা, খেয়েছি, নিয়েছি, হয়ে গেছে, yes</string>
+    <string name="suggestion_medication_not_yet_words">না, এখনও না, এখনো না, পরে, ভুলে গেছি, খাইনি, no</string>
+    <string name="suggestion_game_question">আপনি কি একটি স্মৃতি খেলা খেলতে চান?</string>
+    <string name="suggestion_game_yes">হ্যাঁ, খেলি</string>
+    <string name="suggestion_game_later">পরে হবে</string>
+    <string name="suggestion_game_yes_words">হ্যাঁ, হাঁ, ঠিক আছে, চলো, খেলব, খেলি, yes, ok</string>
+    <string name="suggestion_game_later_words">না, পরে, এখন না, no</string>
+    <string name="suggestion_ack_medication_taken">ধন্যবাদ — মনে রাখার জন্য চমৎকার।</string>
+    <string name="suggestion_ack_medication_not_yet">ঠিক আছে। একটু পরে আবার জিজ্ঞাসা করব।</string>
+    <string name="suggestion_ack_game_yes">দারুণ! চলুন খেলি।</string>
+    <string name="suggestion_ack_game_later">ঠিক আছে। পরে হবে।</string>
+    <string name="suggestion_not_understood">আমি ঠিক বুঝতে পারিনি। আবার বলতে পারেন, বা নিচে একটি উত্তরে চাপ দিন।</string>
+</resources>

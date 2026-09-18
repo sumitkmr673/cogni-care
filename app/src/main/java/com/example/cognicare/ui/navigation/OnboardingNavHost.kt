@@ -13,6 +13,7 @@ import com.example.cognicare.ui.screens.onboarding.CaregiverLoginScreen
 import com.example.cognicare.ui.screens.onboarding.ConsentScreen
 import com.example.cognicare.ui.screens.onboarding.IdentifyScreen
 import com.example.cognicare.ui.screens.onboarding.LanguageScreen
+import com.example.cognicare.ui.screens.onboarding.PatientDeviceSetupScreen
 import com.example.cognicare.ui.screens.onboarding.PatientLoginScreen
 import com.example.cognicare.ui.screens.onboarding.WelcomeScreen
 import com.example.cognicare.ui.theme.CaregiverTheme
@@ -68,13 +69,26 @@ fun OnboardingNavHost(
                         }
                     },
                     onContinue = { area ->
-                        val route = if (area == AppArea.PATIENT) PatientLoginRoute else CaregiverLoginRoute
+                        val route = when {
+                            area != AppArea.PATIENT -> CaregiverLoginRoute
+                            // A device that already has a patient set up goes straight to the PIN;
+                            // otherwise it needs a real sign-in first — see AuthRepository.setupPatientDevice.
+                            state.hasPatientDeviceSetup -> PatientLoginRoute
+                            else -> PatientDeviceSetupRoute
+                        }
                         navController.navigate(route) { launchSingleTop = true }
                     }
                 )
             }
             composable<PatientLoginRoute> {
                 PatientLoginScreen(
+                    languageLabel = languageLabel,
+                    onBack = { navController.navigateUp() },
+                    onSetUpDeviceAgain = { navController.navigate(PatientDeviceSetupRoute) { launchSingleTop = true } }
+                )
+            }
+            composable<PatientDeviceSetupRoute> {
+                PatientDeviceSetupScreen(
                     languageLabel = languageLabel,
                     onBack = { navController.navigateUp() }
                 )

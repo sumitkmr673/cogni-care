@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object ConsentRoute
 @Serializable data object IdentifyRoute
 @Serializable data object PatientLoginRoute
+@Serializable data object PatientDeviceSetupRoute
 @Serializable data object CaregiverLoginRoute
 
 // Patient graph

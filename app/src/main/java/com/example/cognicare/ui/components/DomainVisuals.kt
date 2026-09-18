@@ -4,11 +4,13 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.Medication
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.Style
@@ -77,6 +79,8 @@ val ReminderKind.icon: ImageVector
         ReminderKind.WALK -> Icons.AutoMirrored.Rounded.DirectionsWalk
         ReminderKind.MEAL -> Icons.Rounded.Restaurant
         ReminderKind.APPOINTMENT -> Icons.Rounded.Event
+        ReminderKind.ACTIVITY -> Icons.Rounded.Checklist
+        ReminderKind.OTHER -> Icons.Rounded.MoreHoriz
     }
 
 val ReminderKind.tone: Tone
@@ -89,6 +93,8 @@ val ReminderKind.tone: Tone
             ReminderKind.WALK -> colors.mint
             ReminderKind.MEAL -> colors.sand
             ReminderKind.APPOINTMENT -> colors.slate
+            ReminderKind.ACTIVITY -> colors.mint
+            ReminderKind.OTHER -> colors.slate
         }
     }
 

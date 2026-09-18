@@ -28,9 +28,10 @@ class OnboardingViewModel @Inject constructor(
     val uiState: StateFlow<OnboardingUiState> = combine(
         preferences.languageTag,
         preferences.consentAccepted,
-        startingDemo
-    ) { languageTag, consentAccepted, isStartingDemo ->
-        OnboardingUiState(AppLanguage.fromTag(languageTag), consentAccepted, isStartingDemo)
+        startingDemo,
+        authRepository.hasPatientDeviceSetup
+    ) { languageTag, consentAccepted, isStartingDemo, hasPatientDeviceSetup ->
+        OnboardingUiState(AppLanguage.fromTag(languageTag), consentAccepted, isStartingDemo, hasPatientDeviceSetup)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), OnboardingUiState())
 
     fun selectLanguage(language: AppLanguage) {
@@ -41,15 +42,17 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch { preferences.setConsentAccepted(true) }
     }
 
+    // Mirrors the web kiosk's "Start with demo patient": skip straight to a signed-in demo
+    // session with synthetic data, doing a real device setup against the seeded backend account
+    // so the shortcut behaves exactly like a caregiver setting up the patient's device by hand.
     fun startDemoPatient() = startDemo {
-        authRepository.signInPatient(DemoData.PATIENT_PIN)
+        authRepository.setupPatientDevice(DemoData.PATIENT_EMAIL, DemoData.PATIENT_PASSWORD)
     }
 
     fun startDemoCaregiver() = startDemo {
         authRepository.signInCaregiver(DemoData.CAREGIVER_EMAIL, DemoData.CAREGIVER_PASSWORD)
     }
 
-    // Mirrors the web kiosk's "Start with demo patient": skip ahead with synthetic data.
     private fun startDemo(signIn: suspend () -> AuthResult) {
         if (startingDemo.value) return
         startingDemo.value = true

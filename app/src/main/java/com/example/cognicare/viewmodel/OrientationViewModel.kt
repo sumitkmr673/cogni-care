@@ -2,6 +2,9 @@ package com.example.cognicare.viewmodel
 
 import com.example.cognicare.R
 import com.example.cognicare.core.locale.AppLocaleProvider
+import com.example.cognicare.data.model.GameType
+import com.example.cognicare.repository.AuthRepository
+import com.example.cognicare.repository.CareRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.DateFormatSymbols
 import java.util.Calendar
@@ -18,8 +21,10 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class OrientationViewModel @Inject constructor(
-    private val locale: AppLocaleProvider
-) : VoiceQuizViewModel() {
+    private val locale: AppLocaleProvider,
+    careRepository: CareRepository,
+    authRepository: AuthRepository
+) : VoiceQuizViewModel(careRepository, authRepository, GameType.ORIENTATION) {
 
     override fun buildQuestions(): List<VoiceQuizQuestion> {
         val now = Calendar.getInstance()

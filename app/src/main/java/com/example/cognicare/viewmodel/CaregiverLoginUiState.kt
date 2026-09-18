@@ -9,4 +9,4 @@ data class CaregiverLoginUiState(
     val canSubmit: Boolean get() = email.isNotBlank() && password.isNotBlank() && !isSigningIn
 }
 
-enum class CaregiverLoginError { INVALID_EMAIL, INVALID_CREDENTIALS }
+enum class CaregiverLoginError { INVALID_EMAIL, INVALID_CREDENTIALS, NETWORK_ERROR }

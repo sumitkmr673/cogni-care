@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.example.cognicare.R
 import com.example.cognicare.ui.components.BackTextButton
 import com.example.cognicare.ui.components.Eyebrow
+import com.example.cognicare.ui.components.LargeChoiceButton
 import com.example.cognicare.ui.components.PatientScreen
 import com.example.cognicare.ui.components.ScreenTitle
 import com.example.cognicare.ui.components.VoiceAnswerCapture
@@ -233,29 +234,11 @@ private fun AnswerChoice(
     state: VoiceQuizUiState,
     onClick: () -> Unit
 ) {
-    val colors = PatientTheme.colors
-    val primary = MaterialTheme.colorScheme.primary
-    val highlight = state.feedback != AnswerFeedback.NONE && isCorrectOption
-
-    Surface(
+    // Styling lives in LargeChoiceButton so the suggestion dialogs match these buttons exactly.
+    LargeChoiceButton(
+        label = label,
         onClick = onClick,
         enabled = state.isAwaitingAnswer,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = PatientTheme.dimens.primaryAction),
-        shape = RoundedCornerShape(16.dp),
-        color = if (highlight) colors.selectedContainer else MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(if (highlight) 2.dp else 1.5.dp, if (highlight) primary else colors.cardBorder)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-            if (highlight) {
-                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = primary, modifier = Modifier.size(30.dp))
-            }
-        }
-    }
+        highlighted = state.feedback != AnswerFeedback.NONE && isCorrectOption
+    )
 }

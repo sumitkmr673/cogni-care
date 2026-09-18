@@ -2,13 +2,25 @@ package com.example.cognicare.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cognicare.core.game.MAX_GAME_LEVEL
+import com.example.cognicare.core.game.MIN_GAME_LEVEL
+import com.example.cognicare.core.game.memoryMatchLevel
+import com.example.cognicare.core.game.nextLevelAfter
+import com.example.cognicare.data.local.AppPreferences
+import com.example.cognicare.data.model.GameOutcome
+import com.example.cognicare.data.model.GameType
+import com.example.cognicare.repository.AuthRepository
+import com.example.cognicare.repository.CareRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class MemoryCard(
@@ -21,31 +33,61 @@ data class MemoryCard(
 data class MemoryMatchUiState(
     val cards: List<MemoryCard> = emptyList(),
     val matchedPairs: Int = 0,
-    val totalPairs: Int = 0
+    val totalPairs: Int = 0,
+    val mismatchedAttempts: Int = 0,
+    val level: Int = MIN_GAME_LEVEL,
+    val maxLevel: Int = MAX_GAME_LEVEL,
+    /** True once the board is dealt; until then the screen has nothing to show. */
+    val isReady: Boolean = false
 ) {
     val isSolved: Boolean get() = totalPairs > 0 && matchedPairs == totalPairs
 }
 
-/** Six pairs on a 3-column grid: a gentle 4x3 board, easy to scan for low vision. */
+/**
+ * Board size and the mismatch pause both come from the patient's current level — see
+ * [memoryMatchLevel]. Cards lay out in rows of three on screen, so pair counts are chosen to
+ * fill those rows reasonably rather than to grow smoothly.
+ */
 @HiltViewModel
-class MemoryMatchViewModel @Inject constructor() : ViewModel() {
+class MemoryMatchViewModel @Inject constructor(
+    private val careRepository: CareRepository,
+    private val authRepository: AuthRepository,
+    private val preferences: AppPreferences
+) : ViewModel() {
 
-    private val emojis = listOf("🌸", "🐘", "🍎", "🌙", "☀️", "🐦")
+    // Needs at least as many entries as the largest board (9 pairs at level 10). Chosen to be
+    // recognisable at a glance and culturally neutral for patients in the North East.
+    private val emojis = listOf("🌸", "🐘", "🍎", "🌙", "☀️", "🐦", "🐟", "🍌", "🏠", "🍵")
 
     private val _uiState = MutableStateFlow(MemoryMatchUiState())
     val uiState: StateFlow<MemoryMatchUiState> = _uiState.asStateFlow()
 
     private var isResolving = false
+    private var startedAtMillis = System.currentTimeMillis()
+    private var hasReportedCompletion = false
+    private var mismatchPauseMs = memoryMatchLevel(MIN_GAME_LEVEL).mismatchPauseMs
 
     init {
-        startNewBoard()
+        viewModelScope.launch {
+            startNewBoard(preferences.currentGameLevel(GameType.MEMORY_MATCH))
+        }
     }
 
-    private fun startNewBoard() {
-        val deck = (emojis + emojis)
+    private fun startNewBoard(level: Int) {
+        val tuning = memoryMatchLevel(level)
+        mismatchPauseMs = tuning.mismatchPauseMs
+        val faces = emojis.shuffled().take(tuning.pairs)
+        val deck = (faces + faces)
             .shuffled()
             .mapIndexed { index, emoji -> MemoryCard(id = index, emoji = emoji) }
-        _uiState.value = MemoryMatchUiState(cards = deck, matchedPairs = 0, totalPairs = emojis.size)
+        startedAtMillis = System.currentTimeMillis()
+        _uiState.value = MemoryMatchUiState(
+            cards = deck,
+            matchedPairs = 0,
+            totalPairs = tuning.pairs,
+            level = tuning.level,
+            isReady = true
+        )
     }
 
     fun onCardClick(cardId: Int) {
@@ -70,9 +112,10 @@ class MemoryMatchViewModel @Inject constructor() : ViewModel() {
     private fun resolvePair(first: MemoryCard, second: MemoryCard) {
         isResolving = true
         viewModelScope.launch {
-            delay(if (first.emoji == second.emoji) MATCH_PAUSE_MS else MISMATCH_PAUSE_MS)
+            val matched = first.emoji == second.emoji
+            delay(if (matched) MATCH_PAUSE_MS else mismatchPauseMs)
+            var resolved = _uiState.value
             _uiState.update { current ->
-                val matched = first.emoji == second.emoji
                 current.copy(
                     cards = current.cards.map { card ->
                         when {
@@ -81,15 +124,47 @@ class MemoryMatchViewModel @Inject constructor() : ViewModel() {
                             else -> card.copy(isFaceUp = false)
                         }
                     },
-                    matchedPairs = if (matched) current.matchedPairs + 1 else current.matchedPairs
-                )
+                    matchedPairs = if (matched) current.matchedPairs + 1 else current.matchedPairs,
+                    mismatchedAttempts = if (matched) current.mismatchedAttempts else current.mismatchedAttempts + 1
+                ).also { resolved = it }
             }
             isResolving = false
+            if (resolved.isSolved) reportCompletionOnce(resolved)
+        }
+    }
+
+    private fun reportCompletionOnce(finished: MemoryMatchUiState) {
+        if (hasReportedCompletion) return
+        hasReportedCompletion = true
+        viewModelScope.launch {
+            // A clean enough round moves the patient up. The allowance is generous on purpose:
+            // one wrong turn per pair still counts as clearing the level.
+            val cleared = finished.mismatchedAttempts <= finished.totalPairs
+            // The write outlives this scope: the screen navigates away the moment the board is
+            // solved, which would otherwise cancel the level being saved.
+            withContext(NonCancellable) {
+                preferences.setGameLevel(GameType.MEMORY_MATCH, nextLevelAfter(finished.level, cleared))
+            }
+
+            if (authRepository.session.first() == null) return@launch
+            val elapsedMs = System.currentTimeMillis() - startedAtMillis
+            val attempts = finished.totalPairs + finished.mismatchedAttempts
+            careRepository.recordGameCompletion(
+                GameType.MEMORY_MATCH,
+                GameOutcome(
+                    scorePercent = finished.totalPairs * 100.0 / attempts,
+                    accuracyPercent = finished.totalPairs * 100.0 / attempts,
+                    correctAnswers = finished.totalPairs,
+                    totalQuestions = attempts,
+                    responseTimeMs = elapsedMs.toInt(),
+                    mistakes = finished.mismatchedAttempts,
+                    difficultyLevel = finished.level
+                )
+            )
         }
     }
 
     private companion object {
         const val MATCH_PAUSE_MS = 500L
-        const val MISMATCH_PAUSE_MS = 900L
     }
 }

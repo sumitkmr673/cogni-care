@@ -3,6 +3,9 @@ package com.example.cognicare.viewmodel
 import com.example.cognicare.R
 import com.example.cognicare.core.locale.AppLocaleProvider
 import com.example.cognicare.data.demo.DemoData
+import com.example.cognicare.data.model.GameType
+import com.example.cognicare.repository.AuthRepository
+import com.example.cognicare.repository.CareRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -25,8 +28,10 @@ private val relationLabels = mapOf(
  */
 @HiltViewModel
 class FamilyIdentificationViewModel @Inject constructor(
-    private val locale: AppLocaleProvider
-) : VoiceQuizViewModel() {
+    private val locale: AppLocaleProvider,
+    careRepository: CareRepository,
+    authRepository: AuthRepository
+) : VoiceQuizViewModel(careRepository, authRepository, GameType.FAMILY_IDENTIFICATION) {
 
     override fun buildQuestions(): List<VoiceQuizQuestion> {
         val members = DemoData.familyMembers
