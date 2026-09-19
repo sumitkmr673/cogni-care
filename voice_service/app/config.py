@@ -12,10 +12,9 @@ class Settings:
     jwt_secret_key: str
     jwt_algorithm: str
 
+    # The GGUF file run.ps1 hands to llama-server, and where that server listens.
     llm_path: Path
-    # -1 offloads every layer to the GPU; lower it if the model does not fit in VRAM.
-    llm_gpu_layers: int
-    llm_context: int
+    llm_url: str
 
     whisper_model: str
     whisper_device: str
@@ -31,10 +30,11 @@ def load_settings() -> Settings:
         llm_path=Path(
             os.environ.get("VOICE_LLM_PATH", str(REPO_ROOT / "Models" / "Qwen3-8B-Q4_K_M.gguf"))
         ),
-        llm_gpu_layers=int(os.environ.get("VOICE_LLM_GPU_LAYERS", "-1")),
-        llm_context=int(os.environ.get("VOICE_LLM_CONTEXT", "2048")),
+        llm_url=os.environ.get("VOICE_LLM_URL", "http://127.0.0.1:8101"),
         whisper_model=os.environ.get("VOICE_WHISPER_MODEL", "medium"),
         whisper_device=os.environ.get("VOICE_WHISPER_DEVICE", "cuda"),
-        whisper_compute_type=os.environ.get("VOICE_WHISPER_COMPUTE_TYPE", "float16"),
+        # int8_float16 keeps Whisper medium near 1 GB of VRAM, leaving room for Qwen3-8B on an
+        # 8 GB card; accuracy is practically the same as float16 for short answers.
+        whisper_compute_type=os.environ.get("VOICE_WHISPER_COMPUTE_TYPE", "int8_float16"),
         max_audio_bytes=int(os.environ.get("VOICE_MAX_AUDIO_BYTES", str(5 * 1024 * 1024))),
     )

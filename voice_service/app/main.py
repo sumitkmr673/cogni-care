@@ -17,8 +17,8 @@ from pydantic import ValidationError
 
 from app.auth import require_app_user
 from app.config import Settings, load_settings
-from app.interpreter import Interpreter, QwenInterpreter
-from app.schemas import HealthResponse, InterpretResponse, InterpretTextRequest, VoiceContext
+from app.interpreter import Interpreter, InterpreterUnavailable, LlamaServerInterpreter
+from app.schemas import HealthResponse, InterpretResponse, InterpretTextRequest, TranscribeResponse, VoiceContext
 from app.transcriber import Transcriber, WhisperTranscriber, whisper_language
 
 # Extensions PyAV (used by faster-whisper) decodes; the app records AAC in .m4a.
@@ -46,9 +46,7 @@ def create_app(
         app.state.transcriber = transcriber or WhisperTranscriber(
             resolved.whisper_model, resolved.whisper_device, resolved.whisper_compute_type
         )
-        app.state.interpreter = interpreter or QwenInterpreter(
-            resolved.llm_path, resolved.llm_gpu_layers, resolved.llm_context
-        )
+        app.state.interpreter = interpreter or LlamaServerInterpreter(resolved.llm_url)
         # One GPU, two models: requests take turns rather than running out of VRAM together.
         app.state.gpu_lock = threading.Lock()
         yield
@@ -70,12 +68,23 @@ def _whisper_hint(context: VoiceContext) -> str:
 @router.get("/health", response_model=HealthResponse)
 def health(request: Request) -> HealthResponse:
     settings = request.app.state.settings
+    is_ready = getattr(request.app.state.interpreter, "is_ready", None)
+    llm_ready = is_ready() if callable(is_ready) else True
     return HealthResponse(
-        status="ok",
+        status="ok" if llm_ready else "degraded",
         whisper_model=settings.whisper_model,
         llm_model=settings.llm_path.name,
+        llm_ready=llm_ready,
         device=settings.whisper_device,
     )
+
+
+def _choose(state, transcript: str, context: VoiceContext) -> str | None:
+    """503 when the model is down, so the app falls back instead of reading it as "not understood"."""
+    try:
+        return state.interpreter.choose(transcript, context)
+    except InterpreterUnavailable:
+        raise HTTPException(status_code=503, detail="Language model is not running") from None
 
 
 @router.post("/interpret", response_model=InterpretResponse)
@@ -104,7 +113,7 @@ def interpret_audio(
                 temp_path, whisper_language(parsed_context.language), _whisper_hint(parsed_context)
             )
             transcribed = time.perf_counter()
-            choice = state.interpreter.choose(transcript, parsed_context)
+            choice = _choose(state, transcript, parsed_context)
             finished = time.perf_counter()
     finally:
         os.remove(temp_path)
@@ -120,6 +129,42 @@ def interpret_audio(
     )
 
 
+# Whisper's initial prompt is short by design; a long one makes it echo the prompt back.
+MAX_HINT_CHARS = 300
+
+
+@router.post("/transcribe", response_model=TranscribeResponse)
+def transcribe_audio(
+    request: Request,
+    audio: UploadFile = File(..., description="The patient's recorded answer (.wav, .m4a, …)"),
+    language: str | None = Form(default=None, max_length=16, description="App language tag, e.g. hi"),
+    hint: str | None = Form(default=None, description="Words likely to be said, e.g. the answers on screen"),
+    _user_id: str = Depends(require_app_user),
+) -> TranscribeResponse:
+    """Whisper only, no Qwen: the talking games match the words against the answer themselves.
+
+    A game's hint should be every answer shown on screen, never just the correct one, so Whisper
+    is nudged toward all of them equally and a mumble is not turned into the right answer.
+    """
+    state = request.app.state
+    suffix = os.path.splitext(audio.filename or "")[1].lower()
+    temp_path = _save_upload(audio, suffix if suffix in AUDIO_SUFFIXES else ".bin", state.settings.max_audio_bytes)
+    try:
+        with state.gpu_lock:
+            started = time.perf_counter()
+            transcript, detected = state.transcriber.transcribe(
+                temp_path, whisper_language(language), (hint or "")[:MAX_HINT_CHARS] or None
+            )
+            finished = time.perf_counter()
+    finally:
+        os.remove(temp_path)
+    return TranscribeResponse(
+        transcript=transcript,
+        language=detected,
+        timings_ms={"transcribe": int((finished - started) * 1000)},
+    )
+
+
 @router.post("/interpret-text", response_model=InterpretResponse)
 def interpret_text(
     body: InterpretTextRequest,
@@ -130,7 +175,7 @@ def interpret_text(
     state = request.app.state
     with state.gpu_lock:
         started = time.perf_counter()
-        choice = state.interpreter.choose(body.transcript, body.context)
+        choice = _choose(state, body.transcript, body.context)
         finished = time.perf_counter()
     return InterpretResponse(
         transcript=body.transcript,

@@ -41,7 +41,7 @@ All under `/app/voice`, on port `8100` by default. Everything except `/health` n
 - `language` is the app's language tag. `en`, `hi`, `bn`, `as` and `ne` are passed to Whisper;
   Manipuri, Khasi and Mizo aren't Whisper languages, so for those it auto-detects.
 - `question` is null for the free-form assistant ("play a game", "go home").
-- `options`: 1–6, unique `id`s. The labels also nudge Whisper towards the words the patient is
+- `options`: 1–10, unique `id`s. The labels also nudge Whisper towards the words the patient is
   likely to say.
 
 ### `POST /app/voice/interpret-text` — text in
@@ -69,20 +69,31 @@ grammar-constrained to the offered ids, and the server checks again before reply
 
 ### `GET /app/voice/health`
 
-No auth. Reports the configured model names.
+No auth. Reports the configured model names and `llm_ready`; `status` is `degraded` when Qwen is
+not reachable. The interpret endpoints answer **503** in that case, so the app can fall back to
+on-device matching instead of treating it as "not understood".
 
 ## Running it
 
 Needs Python 3.11 and an NVIDIA GPU. An RTX 4060 (8 GB) fits Qwen3-8B Q4 and Whisper medium together.
 
+Qwen runs in **llama.cpp's own `llama-server`**, not inside Python: the prebuilt `llama-cpp-python`
+CUDA wheel is compiled with AVX-512 and crashes on CPUs without it (e.g. Core Ultra 7 155H), while the
+official build picks a CPU variant at runtime. `run.ps1` starts it on `127.0.0.1:8101` and stops it
+again when the service stops.
+
 ```powershell
 cd voice_service
 py -3.11 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements-models.txt   # several GB
+# One-time: from https://github.com/ggml-org/llama.cpp/releases download
+# llama-b<build>-bin-win-cuda-12.4-x64.zip and unzip it into voice_service\llama-server\
+# (git-ignored). Tested with b11033. Use the CUDA 12.4 build unless your driver supports 13.x.
 powershell -ExecutionPolicy Bypass -File run.ps1
 ```
 
 - The Qwen GGUF is read from `../Models/Qwen3-8B-Q4_K_M.gguf` (override with `VOICE_LLM_PATH`).
+- Whisper runs as `int8_float16` by default (about 1 GB of VRAM) so both models fit in 8 GB.
 - Whisper medium (~1.5 GB) downloads from Hugging Face on the first start and is cached after that.
 - `run.ps1` takes `JWT_SECRET_KEY` from `../backend/.env`, then applies `voice_service/.env`
   (see `.env.example`).
@@ -97,5 +108,5 @@ The tests use stand-ins for both models, so they need no GPU and no downloads:
 
 ```powershell
 .venv\Scripts\python -m pip install -r requirements-dev.txt
-.venv\Scripts\python -m unittest discover -s tests -v
+.venv\Scripts\python -m unittest discover -s tests -t . -v
 ```

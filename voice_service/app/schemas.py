@@ -14,7 +14,8 @@ class VoiceContext(BaseModel):
     language: str | None = Field(default=None, max_length=16)
     # The question on screen, or null for the free-form assistant.
     question: str | None = Field(default=None, max_length=300)
-    options: list[VoiceOption] = Field(min_length=1, max_length=6)
+    # Up to 10: the floating assistant offers every game plus "games list" and "home".
+    options: list[VoiceOption] = Field(min_length=1, max_length=10)
 
     @model_validator(mode="after")
     def option_ids_are_unique(self) -> "VoiceContext":
@@ -39,8 +40,17 @@ class InterpretResponse(BaseModel):
     timings_ms: dict[str, int]
 
 
+class TranscribeResponse(BaseModel):
+    """Whisper only, for the talking games: they check the answer on the phone themselves."""
+
+    transcript: str
+    language: str | None
+    timings_ms: dict[str, int]
+
+
 class HealthResponse(BaseModel):
     status: str
     whisper_model: str
     llm_model: str
+    llm_ready: bool
     device: str

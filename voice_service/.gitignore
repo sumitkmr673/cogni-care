@@ -1,0 +1,3 @@
+# llama.cpp's official binaries (~240 MB) - downloaded per machine, see README
+llama-server/
+.env
