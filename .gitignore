@@ -11,3 +11,10 @@ frontend/node_modules/
 frontend/dist/
 .gradle/
 **/build/
+
+
+# Local Android files
+.kotlin/
+local.properties
+local.properties.bak
+*.log
