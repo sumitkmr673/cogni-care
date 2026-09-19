@@ -4,6 +4,7 @@ from app.models.game_result import GameResult
 from app.models.game_session import GameSession
 from app.models.patient import Patient
 from app.models.patient_caregiver import PatientCaregiver
+from app.models.patient_device import PatientDevice
 from app.models.performance_metric import PerformanceMetric
 from app.models.reminder import Reminder
 from app.models.user import User
@@ -15,6 +16,7 @@ __all__ = [
     "GameSession",
     "Patient",
     "PatientCaregiver",
+    "PatientDevice",
     "PerformanceMetric",
     "Reminder",
     "User",

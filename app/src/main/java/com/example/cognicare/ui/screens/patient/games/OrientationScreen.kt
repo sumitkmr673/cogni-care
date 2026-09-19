@@ -10,14 +10,12 @@ import com.example.cognicare.viewmodel.OrientationViewModel
 
 @Composable
 fun OrientationScreen(
-    languageLabel: String,
     onBack: () -> Unit,
     onComplete: () -> Unit,
     viewModel: OrientationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     VoiceQuizScreen(
-        languageLabel = languageLabel,
         eyebrow = stringResource(R.string.game_orientation),
         title = stringResource(R.string.orientation_title),
         state = state,

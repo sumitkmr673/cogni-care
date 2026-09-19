@@ -4,8 +4,8 @@
     <!-- Brand & shared chrome -->
     <string name="brand_tagline_patient">Memory care</string>
     <string name="brand_tagline_caregiver">Caregiver support</string>
-    <string name="footer_help">Need help? Ask your doctor or a family member.</string>
-    <string name="footer_privacy">Privacy-first demo · synthetic data only</string>
+    <string name="footer_help">Need help? Ask your caregiver or family member.</string>
+    <string name="footer_privacy">Your information is safely connected to your care team.</string>
     <string name="demo_badge">Synthetic demonstration data</string>
 
     <!-- Actions -->
@@ -26,7 +26,6 @@
     <string name="cd_open_alerts">Open alerts</string>
     <string name="cd_open_settings">open settings</string>
     <string name="cd_change_patient">Change patient</string>
-    <string name="cd_step_progress">Step %1$d of %2$d: %3$s</string>
     <string name="cd_show_password">Show password</string>
     <string name="cd_hide_password">Hide password</string>
     <string name="cd_trend_chart">Memory went from %1$d to %2$d and attention from %3$d to %4$d over this period.</string>
@@ -37,54 +36,10 @@
     <string name="greeting_evening">Good evening,</string>
 
     <!-- Onboarding steps -->
-    <string name="step_language">Language</string>
-    <string name="step_consent">Consent</string>
-    <string name="step_identify">Identify</string>
     <string name="step_sign_in">Sign in</string>
     <string name="step_eyebrow">Step %1$d of %2$d · %3$s</string>
 
-    <!-- Welcome -->
-    <string name="welcome_eyebrow">Memory care at home</string>
-    <string name="welcome_mode">AI-assisted cognitive games</string>
-    <string name="welcome_title">Everyday games to</string>
-    <string name="welcome_emphasis">keep your mind active.</string>
-    <string name="welcome_body">CogniCare offers gentle memory games and daily reminders. Your doctor sees how you are doing and can support your care.</string>
-    <string name="welcome_start">Get started</string>
-    <string name="welcome_demo_patient">Start with demo patient</string>
-    <string name="welcome_demo_caregiver">Open demo caregiver dashboard</string>
-    <string name="welcome_demo_loading">Opening the demo…</string>
-    <string name="welcome_note_voice">Voice &amp; touch</string>
-    <string name="welcome_note_voice_sub">In your language</string>
-    <string name="welcome_note_review">Doctor reviewed</string>
-    <string name="welcome_note_review_sub">Insights, never a diagnosis</string>
-
-    <!-- Language -->
-    <string name="language_title">Choose your language</string>
-    <string name="language_lead">Select the language you are most comfortable using.</string>
-    <string name="language_selected">Selected: %1$s</string>
     <string name="language_coming_soon">Coming soon · shown in English for now</string>
-
-    <!-- Consent -->
-    <string name="consent_step">Your privacy matters</string>
-    <string name="consent_title">Before we begin</string>
-    <string name="consent_lead">Please read how CogniCare uses the information from your games and reminders.</string>
-    <string name="consent_activity_title">Game activity</string>
-    <string name="consent_activity_body">CogniCare records how you play memory games and which daily reminders you complete.</string>
-    <string name="consent_insights_title">Insights for your doctor</string>
-    <string name="consent_insights_body">Your doctor sees progress trends to support your care. These are insights, not a medical diagnosis.</string>
-    <string name="consent_control_title">Your control</string>
-    <string name="consent_control_body">Information stays on this device until it can sync over a secure connection. You or your family can ask to stop at any time.</string>
-    <string name="consent_agree_text">I understand and agree to continue.</string>
-    <string name="consent_agree">I agree</string>
-
-    <!-- Identify (role selection) -->
-    <string name="identify_step">Who is using CogniCare</string>
-    <string name="identify_title">Who is using CogniCare today?</string>
-    <string name="identify_lead">Tap the big button to begin.</string>
-    <string name="identify_patient_title">I am a Patient</string>
-    <string name="identify_patient_body">Play memory games and see today\'s reminders</string>
-    <string name="identify_caregiver_link">If you are a caregiver or doctor, tap here</string>
-    <string name="identify_demo_note">Demo only: Meera Sharma · synthetic patient profile</string>
 
     <!-- Patient sign in -->
     <string name="patient_login_title">Welcome back</string>
@@ -92,12 +47,14 @@
     <string name="patient_login_type_label">Or type your name</string>
     <string name="patient_login_name_field">Your name</string>
     <string name="patient_login_error">That doesn\'t match the name we have. Let\'s try again.</string>
-    <string name="patient_login_help">Need help? Ask your caregiver or doctor.</string>
-    <string name="patient_login_demo_note">Demo patient name: %1$s</string>
-    <string name="patient_login_setup_again">Caregiver or doctor? Set up this device again</string>
+    <string name="patient_login_help">Need help? Ask your caregiver or family member.</string>
+    <string name="patient_login_setup_again">Caregiver? Set up this device again</string>
     <string name="patient_login_locked_title">Let\'s get some help</string>
-    <string name="patient_login_locked_body">We couldn\'t recognise the name after several tries. Please ask your caregiver or doctor to help you sign in.</string>
-    <string name="patient_login_locked_caregiver_note">For the caregiver or doctor: this device locked after %1$d unrecognised names. Setting the device up again unlocks it.</string>
+    <string name="patient_login_locked_body">We couldn\'t recognise the name after several tries. Please ask your caregiver to help you sign in.</string>
+    <string name="patient_login_locked_caregiver_note">For the caregiver: this device locked after %1$d unrecognised names. Setting the device up again unlocks it.</string>
+    <string name="language_dialog_prompt">Choose the language you are most comfortable with.</string>
+    <string name="patient_home_help_text">Need help? Ask your caregiver or family member.</string>
+    <string name="unspecified">Not specified</string>
 
     <!-- Caregiver sign in -->
     <string name="caregiver_login_title">Sign in as caregiver</string>
@@ -117,6 +74,84 @@
     <string name="device_setup_lead">Enter the patient\'s sign-in details once. After that, the patient just says or types their name.</string>
     <string name="device_setup_submit">Set up device</string>
     <string name="device_setup_demo_body">Demo patient: %1$s · password %2$s</string>
+    <string name="error_device_already_bound">This phone or tablet is already set up for another patient.</string>
+    <string name="label_patient_name">Your Full Name</string>
+    <string name="patient_register_title">Welcome to CogniCare</string>
+    <string name="patient_register_lead">Tell us your name to get started. You won\'t need to remember any passwords.</string>
+    <string name="patient_register_submit">Get Started</string>
+    <string name="action_caregiver_account_setup">Caregiver account sign-in</string>
+    <string name="action_simple_registration">Simple registration</string>
+
+    <!-- Simple Mode Patient Onboarding -->
+    <string name="step_progress_text">Step %1$d of %2$d</string>
+    <string name="simple_reg_welcome_title">Welcome!</string>
+    <string name="simple_reg_welcome_lead">Let\'s get your app ready.</string>
+    <string name="simple_reg_welcome_action">Get Started</string>
+    <string name="simple_reg_caregiver_switch">Caregiver? Sign in here</string>
+
+    <string name="simple_reg_name_title">What is your name?</string>
+    <string name="simple_reg_name_lead">We\'ll use this to greet you.</string>
+    <string name="simple_reg_name_label">Your name</string>
+
+    <string name="simple_reg_dob_title">When were you born?</string>
+    <string name="simple_reg_dob_lead">Select your birth date below.</string>
+    <string name="simple_reg_dob_day">Day</string>
+    <string name="simple_reg_dob_month">Month</string>
+    <string name="simple_reg_dob_year">Year</string>
+    <string name="simple_reg_dob_error">Please enter a valid birth date.</string>
+
+    <string name="simple_reg_gender_title">Which one describes you?</string>
+    <string name="simple_reg_gender_lead">Choose one option.</string>
+    <string name="simple_reg_gender_woman">Woman</string>
+    <string name="simple_reg_gender_man">Man</string>
+    <string name="simple_reg_gender_other">Prefer not to say</string>
+
+    <string name="simple_reg_lang_title">Choose your language</string>
+    <string name="simple_reg_lang_lead">Which language are you most comfortable with?</string>
+    <string name="simple_reg_lang_notice">Currently supported: English, Hindi and Bangla. More languages are coming soon.</string>
+    <string name="simple_reg_lang_finish">Continue</string>
+
+    <!-- Concise Patient Consent -->
+    <string name="simple_reg_consent_title">Your information</string>
+    <string name="simple_reg_consent_lead">Cogni-Care uses your game activity to help your care team understand your progress.</string>
+    <string name="simple_reg_consent_games_title">Your games</string>
+    <string name="simple_reg_consent_games_desc">We record how you play.</string>
+    <string name="simple_reg_consent_team_title">Your care team</string>
+    <string name="simple_reg_consent_team_desc">Your progress can be shared with people caring for you.</string>
+    <string name="simple_reg_consent_choice_title">Your choice</string>
+    <string name="simple_reg_consent_choice_desc">You can ask your caregiver for help at any time.</string>
+    <string name="simple_reg_consent_checkbox">I understand</string>
+
+    <string name="simple_reg_success_title">You\'re all set!</string>
+    <string name="simple_reg_success_lead">Your profile is ready.</string>
+    <string name="simple_reg_id_label">Your Patient ID</string>
+    <string name="simple_reg_id_helper">Give this ID to your caregiver so they can connect your account.</string>
+    <string name="simple_reg_start_button">Start using Cogni-Care</string>
+
+    <string name="patient_home_id_title">My Patient ID</string>
+    <string name="patient_home_id_lead">Give this ID to your caregiver to connect your account.</string>
+    <string name="patient_home_id_button">View Patient ID</string>
+    <string name="patient_id_copy">Copy ID</string>
+    <string name="patient_id_share">Share</string>
+    <string name="patient_id_copied">Patient ID copied</string>
+    <string name="patient_id_share_text">My Cogni-Care Patient ID is %1$s. Use this ID to connect with me.</string>
+
+    <!-- Patient Secondary Menu -->
+    <string name="menu_button_label">Menu</string>
+    <string name="menu_title">Menu</string>
+    <string name="menu_my_profile">My Profile</string>
+    <string name="menu_my_id">My Patient ID</string>
+    <string name="menu_language">Language</string>
+    <string name="menu_help">Help</string>
+    <string name="menu_switch_user">Switch User</string>
+    <string name="menu_sign_out">Sign Out</string>
+    <string name="profile_dialog_title">My Profile</string>
+    <string name="profile_field_name">Name</string>
+    <string name="profile_field_dob">Birth Date</string>
+    <string name="profile_field_gender">Gender</string>
+    <string name="profile_field_lang">Language</string>
+    <string name="help_dialog_title">Need help?</string>
+    <string name="help_dialog_body">Ask your caregiver or family member for assistance. They can connect to your account using your Patient ID.</string>
 
     <!-- Safety -->
     <string name="safety_title">AI-assisted insights · review required</string>
@@ -125,9 +160,12 @@
     <string name="safety_tag_draft">DRAFT</string>
 
     <!-- Patient home -->
-    <string name="patient_home_lead">Here is your plan for today.</string>
-    <string name="patient_home_play_title">Play today\'s game</string>
-    <string name="patient_home_play_body">Gentle exercises for memory and attention</string>
+    <string name="patient_home_lead">Here is your gentle plan for today.</string>
+    <string name="patient_home_play_title">Play a game</string>
+    <string name="patient_home_play_body">Gentle exercises for memory and focus</string>
+    <string name="patient_home_next_reminder">Next reminder</string>
+    <string name="patient_home_no_reminders">No reminders for now.</string>
+    <string name="patient_home_reminders_unavailable">Reminders are currently unavailable.</string>
     <string name="patient_home_today">Today\'s activities</string>
     <string name="patient_home_progress">%1$d of %2$d done</string>
     <string name="patient_home_empty">Nothing else is planned for today. Enjoy your day!</string>
@@ -157,7 +195,7 @@
     <string name="game_placeholder_body">This game is almost ready. Please try another game for now.</string>
     <string name="game_back_to_games">Back to games</string>
     <string name="game_complete_title">Great job today!</string>
-    <string name="game_complete_body">You finished the game. Your doctor will see how you are doing.</string>
+    <string name="game_complete_body">You finished the game. Your care team can see your progress.</string>
 
     <!-- Memory Match -->
     <string name="memory_match_title">Find the matching pairs</string>

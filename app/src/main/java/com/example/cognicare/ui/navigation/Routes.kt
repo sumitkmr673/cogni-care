@@ -2,13 +2,9 @@ package com.example.cognicare.ui.navigation
 
 import kotlinx.serialization.Serializable
 
-// Onboarding (signed out) — mirrors the web kiosk: welcome → language → consent → identify → sign in
-@Serializable data object WelcomeRoute
-@Serializable data object LanguageRoute
-@Serializable data object ConsentRoute
-@Serializable data object IdentifyRoute
-@Serializable data object PatientLoginRoute
+// Onboarding (signed out)
 @Serializable data object PatientDeviceSetupRoute
+@Serializable data object PatientLoginRoute
 @Serializable data object CaregiverLoginRoute
 
 // Patient graph

@@ -1,3 +1,5 @@
+import secrets
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,13 +15,14 @@ from app.api.dependencies import (
     get_current_patient_accessor,
     get_db,
 )
-from app.identifiers import generate_patient_public_id
+from app.identifiers import generate_device_identifier, generate_patient_public_id
 from app.models.caregiver import Caregiver
 from app.models.game import Game
 from app.models.game_result import GameResult
 from app.models.game_session import GameSession
 from app.models.patient import Patient
 from app.models.patient_caregiver import PatientCaregiver
+from app.models.patient_device import PatientDevice
 from app.models.performance_metric import PerformanceMetric
 from app.models.reminder import Reminder
 from app.models.user import User
@@ -37,11 +40,18 @@ from app.schemas.dashboard import (
     ReminderItem,
     SessionResult,
 )
+from app.schemas.device import (
+    DeviceProvisionRequest,
+    DeviceProvisionResponse,
+    DeviceRevokeResponse,
+    DeviceSummaryResponse,
+)
 from app.schemas.reminder import (
     ReminderCreateRequest,
     ReminderStatusUpdateRequest,
     ReminderUpdateRequest,
 )
+from app.security import hash_password
 
 router = APIRouter(tags=["caregiver dashboard"])
 
@@ -58,14 +68,14 @@ CAREGIVER_ACCESS_DESCRIPTION = (
     description=CAREGIVER_ACCESS_DESCRIPTION,
 )
 def list_patients(
-    accessor: PatientAccessor = Depends(get_current_patient_accessor),
+    caregiver: Caregiver = Depends(get_current_caregiver),
     db: Session = Depends(get_db),
 ) -> PatientsResponse:
     rows = db.execute(
         select(Patient, User.display_name)
         .join(User, User.id == Patient.user_id)
         .join(PatientCaregiver, PatientCaregiver.patient_id == Patient.id)
-        .where(PatientCaregiver.caregiver_id == accessor.caregiver.id)
+        .where(PatientCaregiver.caregiver_id == caregiver.id)
         .order_by(User.display_name, Patient.id)
     ).all()
 
@@ -636,3 +646,187 @@ def update_reminder_status(
     db.commit()
     db.refresh(reminder)
     return _reminder_response(reminder, creator_public_id, creator_name)
+
+
+def _get_primary_caregiver_link(patient_id: UUID, caregiver: Caregiver, db: Session) -> PatientCaregiver:
+    patient = db.scalar(select(Patient).where(Patient.id == patient_id))
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+
+    link = db.scalar(
+        select(PatientCaregiver).where(
+            PatientCaregiver.patient_id == patient_id,
+            PatientCaregiver.caregiver_id == caregiver.id,
+        )
+    )
+    if link is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+    if not link.is_primary:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the primary caregiver can manage patient devices",
+        )
+    return link
+
+
+@router.post(
+    "/patients/{patient_id}/devices",
+    response_model=DeviceProvisionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a device binding for a patient",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+def provision_patient_device(
+    patient_id: UUID,
+    payload: DeviceProvisionRequest,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> DeviceProvisionResponse:
+    _get_primary_caregiver_link(patient_id, caregiver, db)
+
+    patient = db.scalar(select(Patient).where(Patient.id == patient_id))
+    if patient is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Patient not found",
+        )
+
+    # Enforce one active device per patient
+    existing_active = db.scalar(
+        select(PatientDevice).where(
+            PatientDevice.patient_id == patient_id,
+            PatientDevice.status == "ACTIVE",
+        )
+    )
+    if existing_active is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Patient already has an active device registered",
+        )
+
+    # If client device ID is supplied, check if that client is already active for another patient
+    client_device_id = payload.client_device_id.strip() if payload.client_device_id else None
+    if client_device_id:
+        existing_client = db.scalar(
+            select(PatientDevice).where(
+                PatientDevice.client_device_id == client_device_id,
+                PatientDevice.status == "ACTIVE",
+            )
+        )
+        if existing_client is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This device is already active for another patient",
+            )
+
+    device_identifier = generate_device_identifier()
+    device_key = secrets.token_urlsafe(32)
+
+    device = PatientDevice(
+        patient_id=patient_id,
+        device_identifier=device_identifier,
+        client_device_id=client_device_id,
+        device_name=payload.device_name.strip() if payload.device_name else None,
+        device_key_hash=hash_password(device_key),
+        status="ACTIVE",
+    )
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+
+    user = db.scalar(select(User).where(User.id == patient.user_id))
+    display_name = user.display_name if user else "Patient"
+
+    return DeviceProvisionResponse(
+        device_id=device.id,
+        device_identifier=device.device_identifier,
+        device_key=device_key,
+        patient_id=patient.id,
+        patient_public_id=patient.public_id,
+        display_name=display_name,
+        status=device.status,
+        created_at=device.created_at,
+    )
+
+
+@router.get(
+    "/patients/{patient_id}/devices",
+    response_model=list[DeviceSummaryResponse],
+    summary="List device bindings for a patient",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+def list_patient_devices(
+    patient_id: UUID,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> list[DeviceSummaryResponse]:
+    get_accessible_patient(patient_id, caregiver, db)
+
+    devices = db.scalars(
+        select(PatientDevice)
+        .where(PatientDevice.patient_id == patient_id)
+        .order_by(PatientDevice.created_at.desc())
+    ).all()
+
+    return [
+        DeviceSummaryResponse(
+            device_id=d.id,
+            device_identifier=d.device_identifier,
+            device_name=d.device_name,
+            client_device_id=d.client_device_id,
+            status=d.status,
+            created_at=d.created_at,
+            last_seen_at=d.last_seen_at,
+            revoked_at=d.revoked_at,
+        )
+        for d in devices
+    ]
+
+
+@router.post(
+    "/patients/{patient_id}/devices/revoke",
+    response_model=DeviceRevokeResponse,
+    summary="Revoke the active device binding for a patient",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+@router.delete(
+    "/patients/{patient_id}/devices",
+    response_model=DeviceRevokeResponse,
+    summary="Revoke the active device binding for a patient (DELETE alias)",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+def revoke_patient_device(
+    patient_id: UUID,
+    caregiver: Caregiver = Depends(get_current_caregiver),
+    db: Session = Depends(get_db),
+) -> DeviceRevokeResponse:
+    _get_primary_caregiver_link(patient_id, caregiver, db)
+
+    device = db.scalar(
+        select(PatientDevice).where(
+            PatientDevice.patient_id == patient_id,
+            PatientDevice.status == "ACTIVE",
+        )
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active device found for this patient",
+        )
+
+    device.status = "REVOKED"
+    device.revoked_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(device)
+
+    return DeviceRevokeResponse(
+        device_identifier=device.device_identifier,
+        status=device.status,
+        revoked_at=device.revoked_at,
+    )

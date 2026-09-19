@@ -60,21 +60,9 @@ class RemoteCareRepository @Inject constructor(
     }
 
     override fun observeReminders(patientId: String): Flow<List<Reminder>> = flow {
-        val remote = runCatching { api.getReminders(patientId) }.getOrNull()
-        val reminders = if (remote != null) {
-            remote.map { it.toReminder(patientId) }
-        } else {
-            // A patient's own session cannot call this caregiver/doctor-only endpoint about
-            // themselves (403) — the backend has no patient-facing reminders API yet. Fall back
-            // to a locally generated daily schedule so the patient home screen still has content.
-            localFallbackReminders(patientId)
-        }
+        val remote = api.getReminders(patientId)
+        val reminders = remote.map { it.toReminder(patientId) }
         emit(reminders)
-    }.combine(locallyCompletedReminderIds) { reminders, completedIds ->
-        // Combined rather than applied once at load: every tick — the home screen's "Mark as
-        // done" or a "Yes, I took it" in a suggestion dialog — re-emits, so the list updates live.
-        // The backend has no completed flag, so the local set is the whole truth.
-        reminders.map { it.copy(completed = it.id in completedIds) }
     }
 
     override fun observeDashboard(patientId: String): Flow<PatientDashboard?> = flow {
@@ -193,24 +181,22 @@ class RemoteCareRepository @Inject constructor(
         val completed = locallyCompletedReminderIds.value
         return reminders.map { it.copy(completed = it.id in completed) }
     }
-
-    /** See the comment on [observeReminders]: only used when the backend refuses the caller. */
-    private fun localFallbackReminders(patientId: String): List<Reminder> =
-        DemoData.reminders(locale = locale, completedIds = locallyCompletedReminderIds.value, patientId = patientId)
 }
 
 private fun PatientSummaryDto.toPatientProfile() = PatientProfile(
     id = id,
     name = display_name,
     languageTag = languageNameToTag(preferred_language),
-    timeZoneId = timezone ?: "Asia/Kolkata"
+    timeZoneId = timezone ?: "Asia/Kolkata",
+    publicId = public_id
 )
 
 private fun PatientProfileDto.toPatientProfile() = PatientProfile(
     id = id,
     name = display_name,
     languageTag = languageNameToTag(preferred_language),
-    timeZoneId = timezone ?: "Asia/Kolkata"
+    timeZoneId = timezone ?: "Asia/Kolkata",
+    publicId = public_id
 )
 
 // The backend stores a full language name (see PROFILE_DATA in seed_demo.py), not an IETF tag.

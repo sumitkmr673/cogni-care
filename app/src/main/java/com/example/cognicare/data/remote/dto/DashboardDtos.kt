@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 data class PatientSummaryDto(
     val id: String,
     val display_name: String,
+    val public_id: String? = null,
     val preferred_language: String? = null,
     val timezone: String? = null,
     val profile_photo_ref: String? = null
@@ -22,6 +23,7 @@ data class PatientsResponseDto(
 data class PatientProfileDto(
     val id: String,
     val display_name: String,
+    val public_id: String? = null,
     val preferred_language: String? = null,
     val timezone: String? = null,
     val profile_photo_ref: String? = null,

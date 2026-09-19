@@ -16,3 +16,7 @@ def generate_caregiver_public_id() -> str:
 
 def generate_patient_public_id() -> str:
     return generate_public_id("PT", 8)
+
+
+def generate_device_identifier() -> str:
+    return generate_public_id("DEV", 12)

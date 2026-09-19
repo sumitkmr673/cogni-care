@@ -1,11 +1,11 @@
 package com.example.cognicare.data.model
 
-/** Two audiences: the patient, and the doctor who acts as the patient's caregiver. */
+/** Two audiences: the patient, and the caregiver. Doctor is a caregiver designation. */
 enum class UserRole {
     PATIENT,
-    DOCTOR;
+    CAREGIVER;
 
-    val isCaregiver: Boolean get() = this == DOCTOR
+    val isCaregiver: Boolean get() = this == CAREGIVER
 }
 
 data class User(
@@ -13,7 +13,9 @@ data class User(
     val name: String,
     val role: UserRole,
     val languagePref: String,
-    val linkedPatientIds: List<String> = emptyList()
+    val linkedPatientIds: List<String> = emptyList(),
+    val publicId: String? = null,
+    val patientId: String? = null
 )
 
 data class AuthSession(
@@ -21,5 +23,7 @@ data class AuthSession(
     val displayName: String,
     val role: UserRole,
     val accessToken: String,
-    val linkedPatientIds: List<String> = emptyList()
+    val linkedPatientIds: List<String> = emptyList(),
+    val publicId: String? = null,
+    val patientId: String? = null
 )

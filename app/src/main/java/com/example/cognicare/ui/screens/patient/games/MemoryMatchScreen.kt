@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
+import com.example.cognicare.ui.components.BackTextButton
 import com.example.cognicare.ui.components.Eyebrow
 import com.example.cognicare.ui.components.LeadText
 import com.example.cognicare.ui.components.PatientScreen
@@ -44,7 +45,7 @@ private const val COLUMNS = 3
 
 @Composable
 fun MemoryMatchScreen(
-    languageLabel: String,
+    onBack: () -> Unit,
     onComplete: () -> Unit,
     viewModel: MemoryMatchViewModel = hiltViewModel()
 ) {
@@ -55,7 +56,9 @@ fun MemoryMatchScreen(
         if (state.isSolved) latestOnComplete()
     }
 
-    PatientScreen(languageLabel = languageLabel) {
+    PatientScreen(showHeader = false) {
+        BackTextButton(onClick = onBack)
+        Spacer(Modifier.height(8.dp))
         Eyebrow(stringResource(R.string.game_memory_match))
         Spacer(Modifier.height(8.dp))
         ScreenTitle(stringResource(R.string.memory_match_title))

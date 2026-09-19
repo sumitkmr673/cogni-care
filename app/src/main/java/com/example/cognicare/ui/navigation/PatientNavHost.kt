@@ -26,7 +26,8 @@ import com.example.cognicare.ui.screens.patient.games.PatternRecallScreen
 @Composable
 fun PatientNavHost(
     session: AuthSession,
-    languageLabel: String,
+    currentLanguage: com.example.cognicare.core.locale.AppLanguage,
+    onLanguageSelected: (com.example.cognicare.core.locale.AppLanguage) -> Unit,
     onSignOut: () -> Unit
 ) {
     RequireArea(session = session, area = AppArea.PATIENT, onDenied = onSignOut) {
@@ -34,7 +35,6 @@ fun PatientNavHost(
         val backStackEntry by navController.currentBackStackEntryAsState()
         // Games own the centre of the screen, so the assistant minimises while one is running.
         val isInGame = backStackEntry?.destination?.hasRoute<GameRoute>() == true
-
         // Mounted once, around the whole patient graph, rather than on each screen.
         VoiceAssistantOverlay(
             isInGame = isInGame,
@@ -44,14 +44,14 @@ fun PatientNavHost(
             NavHost(navController = navController, startDestination = PatientHomeRoute) {
                 composable<PatientHomeRoute> {
                     PatientHomeScreen(
-                        languageLabel = languageLabel,
+                        currentLanguage = currentLanguage,
+                        onLanguageSelected = onLanguageSelected,
                         onOpenGames = { navController.navigate(GamesHubRoute) { launchSingleTop = true } },
                         onSwitchUser = onSignOut
                     )
                 }
                 composable<GamesHubRoute> {
                     GamesHubScreen(
-                        languageLabel = languageLabel,
                         onBack = { navController.navigateUp() },
                         onOpenGame = { game ->
                             navController.navigate(GameRoute(game.name)) { launchSingleTop = true }
@@ -67,18 +67,17 @@ fun PatientNavHost(
                     }
 
                     when (gameType) {
-                        GameType.MEMORY_MATCH -> MemoryMatchScreen(languageLabel = languageLabel, onComplete = onComplete)
-                        GameType.PATTERN_RECALL -> PatternRecallScreen(languageLabel = languageLabel, onComplete = onComplete)
-                        GameType.OBJECT_NAMING -> ObjectNamingScreen(languageLabel, onBack, onComplete)
-                        GameType.DAILY_RECALL -> DailyRecallScreen(languageLabel, onBack, onComplete)
-                        GameType.ORIENTATION -> OrientationScreen(languageLabel, onBack, onComplete)
-                        GameType.FAMILY_IDENTIFICATION -> FamilyIdentificationScreen(languageLabel, onBack, onComplete)
+                        GameType.MEMORY_MATCH -> MemoryMatchScreen(onBack = onBack, onComplete = onComplete)
+                        GameType.PATTERN_RECALL -> PatternRecallScreen(onBack = onBack, onComplete = onComplete)
+                        GameType.OBJECT_NAMING -> ObjectNamingScreen(onBack = onBack, onComplete = onComplete)
+                        GameType.DAILY_RECALL -> DailyRecallScreen(onBack = onBack, onComplete = onComplete)
+                        GameType.ORIENTATION -> OrientationScreen(onBack = onBack, onComplete = onComplete)
+                        GameType.FAMILY_IDENTIFICATION -> FamilyIdentificationScreen(onBack = onBack, onComplete = onComplete)
                         null -> Unit
                     }
                 }
                 composable<GameCompleteRoute> {
                     GameCompleteScreen(
-                        languageLabel = languageLabel,
                         // Pop the finished game and its completion screen off in one go.
                         onBackToGames = { navController.popBackStack(GamesHubRoute, inclusive = false) }
                     )

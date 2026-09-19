@@ -3,19 +3,15 @@ package com.example.cognicare.viewmodel
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cognicare.BuildConfig
 import com.example.cognicare.R
 import com.example.cognicare.core.locale.AppLocaleProvider
-import com.example.cognicare.core.time.isSameDay
 import com.example.cognicare.core.voice.KeywordVoiceInterpreter
 import com.example.cognicare.core.voice.Suggestion
 import com.example.cognicare.core.voice.SuggestionOption
-import com.example.cognicare.core.voice.Suggestions
 import com.example.cognicare.core.voice.VoiceCommandInterpreter
 import com.example.cognicare.core.voice.VoiceIntent
 import com.example.cognicare.core.voice.acknowledgementFor
 import com.example.cognicare.core.voice.splitAnswerWords
-import com.example.cognicare.data.model.ReminderKind
 import com.example.cognicare.repository.AuthRepository
 import com.example.cognicare.repository.CareRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,13 +22,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
-import java.time.LocalTime
 import javax.inject.Inject
 
 data class VoiceAssistantUiState(
@@ -80,9 +72,7 @@ class VoiceAssistantViewModel @Inject constructor(
     private var closeJob: Job? = null
     private var assistantMessageJob: Job? = null
 
-    init {
-        startDemoMedicationTrigger()
-    }
+    // No unsolicited demo medication popups — reminders are schedule-driven and patient-managed.
 
     // ---- Suggestions -------------------------------------------------------------------------
 
@@ -134,7 +124,7 @@ class VoiceAssistantViewModel @Inject constructor(
 
     private fun handle(intent: VoiceIntent) {
         when (intent) {
-            is VoiceIntent.ConfirmMedication -> if (intent.taken) markTodaysMedicationDone()
+            is VoiceIntent.ConfirmMedication -> Unit
             is VoiceIntent.RespondToGameInvite -> if (intent.accepted) navigate(AssistantNavigation.Games)
             VoiceIntent.OpenGames -> navigate(AssistantNavigation.Games)
             VoiceIntent.GoHome -> navigate(AssistantNavigation.Home)
@@ -177,56 +167,11 @@ class VoiceAssistantViewModel @Inject constructor(
         viewModelScope.launch { _navigation.send(target) }
     }
 
-    /** Ticks off today's medication reminder, so the home screen agrees with what was said. */
-    private fun markTodaysMedicationDone() {
-        viewModelScope.launch {
-            runCatching {
-                val session = authRepository.session.firstOrNull() ?: return@launch
-                val now = System.currentTimeMillis()
-                careRepository.observeReminders(session.userId).first()
-                    .firstOrNull { it.kind == ReminderKind.MEDICATION && !it.completed && isSameDay(it.scheduledTime, now) }
-                    ?.let { careRepository.setReminderCompleted(it.id, true) }
-            }
-        }
-    }
-
     private fun wordsFor(option: SuggestionOption): List<String> =
         splitAnswerWords(localeProvider.getString(option.wordsRes))
-
-    /**
-     * STUB — stands in for real reminder scheduling, which this project does not have yet (no
-     * WorkManager/AlarmManager, and nothing fires while the app is closed). While the patient area
-     * is open it asks the medication question once in the mid-afternoon window.
-     *
-     * Debug builds also ask shortly after opening, so the dialog can be demonstrated at any hour.
-     * The once-a-day memory is in-process only and resets when the app restarts.
-     */
-    private fun startDemoMedicationTrigger() {
-        viewModelScope.launch {
-            var askedOn: LocalDate? = null
-            if (BuildConfig.DEBUG) {
-                delay(DEMO_DELAY_MS)
-                showSuggestion(Suggestions.medicationCheck)
-                askedOn = LocalDate.now()
-            }
-            while (true) {
-                val now = LocalTime.now()
-                val today = LocalDate.now()
-                if (askedOn != today && now >= MEDICATION_WINDOW_START && now < MEDICATION_WINDOW_END) {
-                    showSuggestion(Suggestions.medicationCheck)
-                    askedOn = today
-                }
-                delay(TRIGGER_POLL_MS)
-            }
-        }
-    }
 
     private companion object {
         const val ACKNOWLEDGEMENT_MS = 2_200L
         const val ASSISTANT_MESSAGE_MS = 4_500L
-        const val DEMO_DELAY_MS = 12_000L
-        const val TRIGGER_POLL_MS = 60_000L
-        val MEDICATION_WINDOW_START: LocalTime = LocalTime.of(15, 0)
-        val MEDICATION_WINDOW_END: LocalTime = LocalTime.of(20, 0)
     }
 }

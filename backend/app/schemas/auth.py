@@ -20,6 +20,7 @@ class AuthenticatedUserResponse(BaseModel):
     role: str
     is_active: bool
     caregiver_id: UUID | None = None
+    patient_id: UUID | None = None
     public_id: str | None = None
     caregiver_type: str | None = None
     phone: str | None = None

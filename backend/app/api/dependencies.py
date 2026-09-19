@@ -21,7 +21,8 @@ bearer_scheme = HTTPBearer(auto_error=False)
 @dataclass(frozen=True)
 class PatientAccessor:
     role: str
-    caregiver: Caregiver
+    caregiver: Caregiver | None = None
+    patient: Patient | None = None
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -82,9 +83,34 @@ def get_current_caregiver(
 
 
 def get_current_patient_accessor(
-    caregiver: Caregiver = Depends(get_current_caregiver),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> PatientAccessor:
-    return PatientAccessor(role="CAREGIVER", caregiver=caregiver)
+    if current_user.role == "CAREGIVER":
+        caregiver = db.scalar(
+            select(Caregiver).where(Caregiver.user_id == current_user.id)
+        )
+        if caregiver is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Caregiver profile not found",
+            )
+        return PatientAccessor(role="CAREGIVER", caregiver=caregiver)
+    elif current_user.role == "PATIENT":
+        patient = db.scalar(
+            select(Patient).where(Patient.user_id == current_user.id)
+        )
+        if patient is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Patient profile not found",
+            )
+        return PatientAccessor(role="PATIENT", patient=patient)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden",
+        )
 
 
 def get_accessible_patient(
@@ -113,4 +139,22 @@ def get_accessible_patient_for_accessor(
     accessor: PatientAccessor,
     db: Session,
 ) -> Patient:
-    return get_accessible_patient(patient_id, accessor.caregiver, db)
+    if accessor.role == "CAREGIVER":
+        if accessor.caregiver is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Caregiver access required",
+            )
+        return get_accessible_patient(patient_id, accessor.caregiver, db)
+    elif accessor.role == "PATIENT":
+        if accessor.patient is None or accessor.patient.id != patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Patient not found",
+            )
+        return accessor.patient
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden",
+        )

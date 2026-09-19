@@ -1,5 +1,10 @@
 package com.example.cognicare.ui.screens.patient
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,110 +22,244 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Logout
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
+import com.example.cognicare.core.locale.AppLanguage
 import com.example.cognicare.core.time.formatFullDate
 import com.example.cognicare.core.time.formatTime
 import com.example.cognicare.data.model.Reminder
 import com.example.cognicare.ui.components.BackTextButton
-import com.example.cognicare.ui.components.DemoNote
 import com.example.cognicare.ui.components.EmphasisHeadline
 import com.example.cognicare.ui.components.Eyebrow
 import com.example.cognicare.ui.components.LeadText
-import com.example.cognicare.ui.components.PatientPrimaryButton
+import com.example.cognicare.ui.components.PatientHelpDialog
+import com.example.cognicare.ui.components.PatientIdDialog
+import com.example.cognicare.ui.components.PatientLanguageDialog
+import com.example.cognicare.ui.components.PatientMenuBottomSheet
+import com.example.cognicare.ui.components.PatientProfileDialog
 import com.example.cognicare.ui.components.PatientScreen
 import com.example.cognicare.ui.components.greetingLead
 import com.example.cognicare.ui.components.icon
 import com.example.cognicare.ui.theme.PatientTheme
 import com.example.cognicare.viewmodel.PatientHomeViewModel
 
-/** Daily Activities & Reminders: the patient's home screen. */
+/** Daily Activities & Reminders: calm elderly launcher. */
 @Composable
 fun PatientHomeScreen(
-    languageLabel: String,
+    currentLanguage: AppLanguage,
+    onLanguageSelected: (AppLanguage) -> Unit,
     onOpenGames: () -> Unit,
     onSwitchUser: () -> Unit,
     viewModel: PatientHomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val primary = MaterialTheme.colorScheme.primary
+    val context = LocalContext.current
+    var showLanguageDialog by rememberSaveable { mutableStateOf(false) }
+    var showMenuBottomSheet by rememberSaveable { mutableStateOf(false) }
+    var showProfileDialog by rememberSaveable { mutableStateOf(false) }
+    var showPatientIdDialog by rememberSaveable { mutableStateOf(false) }
+    var showHelpDialog by rememberSaveable { mutableStateOf(false) }
 
-    PatientScreen(languageLabel = languageLabel) {
+    PatientScreen(
+        onMenuClick = { showMenuBottomSheet = true }
+    ) {
         Eyebrow(formatFullDate(System.currentTimeMillis()))
         Spacer(Modifier.height(10.dp))
         EmphasisHeadline(lead = greetingLead(), emphasis = "${state.firstName}.")
         Spacer(Modifier.height(8.dp))
         LeadText(stringResource(R.string.patient_home_lead))
         Spacer(Modifier.height(24.dp))
+
         PlayGameCard(onClick = onOpenGames)
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(28.dp))
+
         Text(
-            text = stringResource(R.string.patient_home_today),
+            text = stringResource(R.string.patient_home_next_reminder).uppercase(),
             modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary
         )
-        if (state.todayReminders.isNotEmpty()) {
-            val total = state.todayReminders.size
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.patient_home_progress, state.completedCount, total),
-                style = MaterialTheme.typography.labelMedium,
-                color = primary
-            )
-            Spacer(Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { state.completedCount.toFloat() / total },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = primary,
-                trackColor = PatientTheme.colors.track,
-                strokeCap = StrokeCap.Round,
-                gapSize = 0.dp,
-                drawStopIndicator = {}
-            )
-        }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
+
         when {
-            state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
-            state.todayReminders.isEmpty() -> DemoNote(stringResource(R.string.patient_home_empty))
-            else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                state.todayReminders.forEach { reminder ->
-                    ReminderCard(reminder = reminder, onToggle = { viewModel.toggleReminder(reminder) })
+            state.isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
+            state.isRemindersUnavailable -> {
+                EmptyReminderCard(stringResource(R.string.patient_home_reminders_unavailable))
+            }
+            state.nextReminder != null -> {
+                NextReminderCard(reminder = state.nextReminder!!)
+            }
+            else -> {
+                EmptyReminderCard(stringResource(R.string.patient_home_no_reminders))
+            }
         }
-        Spacer(Modifier.height(28.dp))
+
+        if (!state.publicId.isNullOrBlank()) {
+            Spacer(Modifier.height(28.dp))
+            PatientIdCard(
+                publicId = state.publicId.orEmpty(),
+                onCopy = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val clip = ClipData.newPlainText("Patient ID", state.publicId)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.patient_id_copied),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+                onShare = {
+                    val sendIntent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            context.getString(R.string.patient_id_share_text, state.publicId)
+                        )
+                        type = "text/plain"
+                    }
+                    val shareIntent = Intent.createChooser(sendIntent, null)
+                    context.startActivity(shareIntent)
+                }
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
         BackTextButton(
             onClick = onSwitchUser,
             modifier = Modifier.fillMaxWidth(),
             label = stringResource(R.string.patient_switch_user, state.firstName),
             icon = Icons.AutoMirrored.Rounded.Logout
+        )
+
+        Spacer(Modifier.height(14.dp))
+        Text(
+            text = stringResource(R.string.patient_home_help_text),
+            style = MaterialTheme.typography.bodySmall,
+            color = PatientTheme.colors.mutedText,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+
+    if (showMenuBottomSheet) {
+        PatientMenuBottomSheet(
+            onDismiss = { showMenuBottomSheet = false },
+            onOpenProfile = { showProfileDialog = true },
+            onOpenPatientId = { showPatientIdDialog = true },
+            onOpenLanguage = { showLanguageDialog = true },
+            onOpenHelp = { showHelpDialog = true },
+            onSwitchUser = onSwitchUser,
+            onSignOut = onSwitchUser
+        )
+    }
+
+    if (showProfileDialog) {
+        PatientProfileDialog(
+            name = state.fullName.ifBlank { state.firstName },
+            publicId = state.publicId,
+            dateOfBirth = state.dateOfBirth,
+            gender = state.gender,
+            languageName = currentLanguage.nativeName,
+            onDismiss = { showProfileDialog = false }
+        )
+    }
+
+    if (showHelpDialog) {
+        PatientHelpDialog(
+            publicId = state.publicId,
+            onDismiss = { showHelpDialog = false }
+        )
+    }
+
+    if (showPatientIdDialog && !state.publicId.isNullOrBlank()) {
+        PatientIdDialog(
+            publicId = state.publicId.orEmpty(),
+            onCopy = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("Patient ID", state.publicId)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.patient_id_copied),
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onShare = {
+                val sendIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        context.getString(R.string.patient_id_share_text, state.publicId)
+                    )
+                    type = "text/plain"
+                }
+                val shareIntent = Intent.createChooser(sendIntent, null)
+                context.startActivity(shareIntent)
+            },
+            onDismiss = { showPatientIdDialog = false }
+        )
+    }
+
+    if (showLanguageDialog) {
+        PatientLanguageDialog(
+            currentLanguage = currentLanguage,
+            onLanguageSelected = onLanguageSelected,
+            onDismiss = { showLanguageDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun EmptyReminderCard(message: String) {
+    val colors = PatientTheme.colors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, colors.cardBorder)
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier.padding(20.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.mutedText,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
 }
@@ -133,7 +272,7 @@ private fun PlayGameCard(onClick: () -> Unit) {
         shape = RoundedCornerShape(22.dp),
         color = MaterialTheme.colorScheme.primary,
         contentColor = Color.White,
-        shadowElevation = 6.dp
+        shadowElevation = 4.dp
     ) {
         Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -161,58 +300,124 @@ private fun PlayGameCard(onClick: () -> Unit) {
 }
 
 @Composable
-private fun ReminderCard(reminder: Reminder, onToggle: () -> Unit) {
+private fun NextReminderCard(reminder: Reminder) {
     val colors = PatientTheme.colors
     val primary = MaterialTheme.colorScheme.primary
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = if (reminder.completed) colors.selectedContainer else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            width = if (reminder.completed) 2.dp else 1.5.dp,
-            color = if (reminder.completed) primary else colors.cardBorder
-        )
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.5.dp, colors.cardBorder)
     ) {
-        Column(Modifier.padding(18.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (reminder.completed) Color.White else colors.iconContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(reminder.kind.icon, contentDescription = null, tint = primary, modifier = Modifier.size(30.dp))
-                }
-                Spacer(Modifier.width(16.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(reminder.title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-                    Text(formatTime(reminder.scheduledTime), style = MaterialTheme.typography.bodyMedium, color = colors.mutedText)
-                }
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(colors.iconContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(reminder.kind.icon, contentDescription = null, tint = primary, modifier = Modifier.size(30.dp))
             }
-            Spacer(Modifier.height(14.dp))
-            if (reminder.completed) {
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = reminder.title,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = formatTime(reminder.scheduledTime),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.mutedText
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PatientIdCard(
+    publicId: String,
+    onCopy: () -> Unit,
+    onShare: () -> Unit
+) {
+    val colors = PatientTheme.colors
+    val primary = MaterialTheme.colorScheme.primary
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = colors.selectedContainer,
+        border = BorderStroke(1.5.dp, primary.copy(alpha = 0.35f))
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Text(
+                text = stringResource(R.string.patient_home_id_title).uppercase(),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = primary
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = publicId,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.5.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.patient_home_id_lead),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.mutedText
+            )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 OutlinedButton(
-                    onClick = onToggle,
+                    onClick = onCopy,
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
                         .heightIn(min = PatientTheme.dimens.minTouchTarget),
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(2.dp, primary),
-                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White, contentColor = primary)
+                    border = BorderStroke(1.5.dp, primary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = primary
+                    )
                 ) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(26.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Text(stringResource(R.string.patient_reminder_done), style = MaterialTheme.typography.labelLarge)
+                    Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.patient_id_copy),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
                 }
-            } else {
-                PatientPrimaryButton(
-                    text = stringResource(R.string.patient_reminder_mark_done),
-                    onClick = onToggle,
-                    leadingIcon = Icons.Rounded.Check,
-                    showArrow = false,
-                    minHeight = PatientTheme.dimens.minTouchTarget
-                )
+                OutlinedButton(
+                    onClick = onShare,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = PatientTheme.dimens.minTouchTarget),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.5.dp, primary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = primary
+                    )
+                ) {
+                    Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.patient_id_share),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
             }
         }
     }

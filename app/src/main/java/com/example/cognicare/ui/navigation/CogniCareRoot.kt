@@ -42,7 +42,8 @@ fun CogniCareRoot(viewModel: SessionViewModel = hiltViewModel()) {
                     PatientTheme {
                         PatientNavHost(
                             session = session,
-                            languageLabel = language.nativeName,
+                            currentLanguage = language,
+                            onLanguageSelected = viewModel::selectLanguage,
                             onSignOut = viewModel::signOut
                         )
                     }
