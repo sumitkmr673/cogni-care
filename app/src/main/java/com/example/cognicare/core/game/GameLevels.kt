@@ -64,3 +64,16 @@ fun patternRecallLevel(level: Int): PatternRecallLevel {
  */
 fun nextLevelAfter(current: Int, cleared: Boolean): Int =
     if (cleared) clampLevel(current + 1) else clampLevel(current)
+
+/** What a finished game means for the next one: the level to play, and whether it went up. */
+data class LevelResult(val nextLevel: Int, val leveledUp: Boolean)
+
+/**
+ * The single source for both the saved level and the "Play level N / Play again" button, so the
+ * button can never promise a level the patient did not actually reach. At the top level, clearing
+ * it again is not a level-up — the patient replays level 10.
+ */
+fun levelResultAfter(current: Int, cleared: Boolean): LevelResult {
+    val next = nextLevelAfter(current, cleared)
+    return LevelResult(nextLevel = next, leveledUp = next > clampLevel(current))
+}

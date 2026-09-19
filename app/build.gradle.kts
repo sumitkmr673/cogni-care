@@ -21,6 +21,17 @@ val cogniCareApiBaseUrl: String = run {
     local.getProperty("COGNICARE_API_BASE_URL") ?: "http://10.0.2.2:8000/"
 }
 
+// Voice service (voice_service/, app-only). Blank = the backend's host on port 8100, which is
+// where run.ps1 starts it; set COGNICARE_VOICE_BASE_URL in local.properties to put it elsewhere.
+val cogniCareVoiceBaseUrl: String = run {
+    val local = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { local.load(it) }
+    }
+    local.getProperty("COGNICARE_VOICE_BASE_URL") ?: ""
+}
+
 android {
     namespace = "com.example.cognicare"
     compileSdk = 35
@@ -34,6 +45,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "API_BASE_URL", "\"$cogniCareApiBaseUrl\"")
+        buildConfigField("String", "VOICE_BASE_URL", "\"$cogniCareVoiceBaseUrl\"")
     }
 
     buildTypes {

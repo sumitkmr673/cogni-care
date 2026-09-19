@@ -4,6 +4,8 @@ import com.example.cognicare.repository.AuthRepository
 import com.example.cognicare.repository.CareRepository
 import com.example.cognicare.repository.RemoteAuthRepository
 import com.example.cognicare.repository.RemoteCareRepository
+import com.example.cognicare.repository.RemoteVoiceRepository
+import com.example.cognicare.repository.VoiceRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,4 +23,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindCareRepository(impl: RemoteCareRepository): CareRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindVoiceRepository(impl: RemoteVoiceRepository): VoiceRepository
 }

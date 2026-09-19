@@ -17,6 +17,25 @@ data class TokenResponseDto(
     val token_type: String = "bearer"
 )
 
+/** POST /auth/register. Creates a caregiver account; it does not sign in — the app logs in after. */
+@Serializable
+data class CaregiverRegisterRequestDto(
+    val email: String,
+    val password: String,
+    val display_name: String,
+    val caregiver_type: String,
+    val phone: String? = null
+)
+
+@Serializable
+data class CaregiverRegisterResponseDto(
+    val id: String,
+    val public_id: String? = null,
+    val email: String,
+    val display_name: String,
+    val caregiver_type: String? = null
+)
+
 @Serializable
 data class AuthenticatedUserDto(
     val id: String,

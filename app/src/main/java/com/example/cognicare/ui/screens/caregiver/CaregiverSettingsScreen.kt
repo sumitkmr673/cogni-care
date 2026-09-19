@@ -74,7 +74,9 @@ fun CaregiverSettingsScreen(
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.doctor_name_format, session.displayName),
+                        // The stored name already says "Dr." for doctors ("Dr. Ananya Mehta"); family
+                        // caregivers are not doctors. Prefixing it here made both wrong.
+                        text = session.displayName,
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )

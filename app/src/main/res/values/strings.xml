@@ -141,6 +141,8 @@
     <string name="games_lead">Take your time. There is no rush.</string>
     <string name="game_level">Level %1$d of %2$d</string>
     <string name="game_level_up">New level unlocked!</string>
+    <string name="game_play_level">Play level %1$d</string>
+    <string name="game_play_again">Play again</string>
     <string name="game_memory_match">Memory Match</string>
     <string name="game_memory_match_desc">Find the matching picture pairs</string>
     <string name="game_pattern_recall">Pattern Recall</string>
@@ -182,6 +184,8 @@
     <string name="speech_button_idle">Tap to speak</string>
     <string name="speech_button_listening">Listening… tap to stop</string>
     <string name="speech_listening_hint">I\'m listening. Say your answer.</string>
+    <string name="speech_transcribing">Just a moment, working out what you said…</string>
+    <string name="speech_say_again">Sorry, I missed that. Please say it once more.</string>
     <string name="speech_heard">“%1$s”</string>
     <string name="speech_error_no_match">Sorry, I didn\'t catch that. Tap to try again, or choose an answer.</string>
     <string name="speech_error_permission">The microphone is off for CogniCare. You can still choose an answer.</string>
@@ -316,6 +320,35 @@
     <string name="patients_add_title">Add a patient</string>
     <string name="patients_add_body">Linking a new patient requires informed consent from the patient or their guardian.</string>
 
+    <!-- Caregiver sign-up and patient linking -->
+    <string name="caregiver_login_create_account">New here? Create a caregiver account</string>
+    <string name="register_eyebrow">Caregivers &amp; doctors</string>
+    <string name="register_title">Create a caregiver account</string>
+    <string name="register_subtitle">For family members, doctors and professional caregivers. Patients are added by their caregiver.</string>
+    <string name="label_full_name">Your full name</string>
+    <string name="label_phone_optional">Phone (optional)</string>
+    <string name="register_type_label">I am a</string>
+    <string name="caregiver_type_family">Family member</string>
+    <string name="caregiver_type_doctor">Doctor</string>
+    <string name="caregiver_type_professional">Professional caregiver</string>
+    <string name="caregiver_type_other">Other</string>
+    <string name="register_password_hint">At least 8 characters</string>
+    <string name="register_submit">Create account</string>
+    <string name="register_have_account">Already have an account? Sign in</string>
+    <string name="error_name_required">Enter your name.</string>
+    <string name="error_password_too_short">Use at least 8 characters.</string>
+    <string name="error_email_taken">An account with this email already exists. Try signing in.</string>
+    <string name="error_register_invalid">Some details weren\'t accepted. Check them and try again.</string>
+    <string name="link_patient_title">Link a patient</string>
+    <string name="link_patient_body">Ask the patient\'s family or doctor for their patient ID. It looks like PT-AB12CD34.</string>
+    <string name="label_patient_id">Patient ID</string>
+    <string name="link_patient_submit">Link patient</string>
+    <string name="link_patient_success">%1$s is now linked to your account.</string>
+    <string name="link_error_invalid_id">That doesn\'t look like a patient ID. It should look like PT-AB12CD34.</string>
+    <string name="link_error_not_found">No patient has that ID. Check it and try again.</string>
+    <string name="link_error_already_linked">This patient is already linked to your account.</string>
+    <string name="patients_public_id">Patient ID: %1$s</string>
+
     <!-- Settings -->
     <string name="settings_eyebrow">Preferences</string>
     <string name="settings_title">Settings</string>
@@ -348,12 +381,17 @@
     <!-- Voice assistant (floating robot button) -->
     <string name="assistant_open">Open voice helper</string>
     <string name="assistant_back_to_game">Back to my game</string>
-    <string name="assistant_not_understood">I can help you play a game or go back home. Just say “play a game” or “go home”.</string>
+    <string name="assistant_not_understood">+</string>
     <string name="assistant_going_home">Let\'s go home.</string>
     <!-- Spoken-command word lists: comma-separated phrases in this language, matched as whole words. -->
     <string name="assistant_games_words">game, games, play</string>
     <string name="assistant_home_words">home, back, main screen</string>
-
+    <string name="assistant_game_memory_match_words">memory match, matching, match the pairs, pairs, cards</string>
+    <string name="assistant_game_pattern_recall_words">pattern, patterns, pattern recall, colours, colors</string>
+    <string name="assistant_game_object_naming_words">object, objects, object naming, name the picture, pictures</string>
+    <string name="assistant_game_daily_recall_words">daily recall, my day, about my day, talk about my day</string>
+    <string name="assistant_game_orientation_words">orientation, what day, where are we, date</string>
+    <string name="assistant_game_family_identification_words">family, faces, family identification, my family, relatives</string>
     <!-- Proactive suggestions. Gentle wording: "not yet" and closing the dialog are never treated as failures. -->
     <string name="suggestion_medication_question">Did you take your medicine?</string>
     <string name="suggestion_medication_yes">Yes, I took it</string>

@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cognicare.core.game.MAX_GAME_LEVEL
 import com.example.cognicare.core.game.MIN_GAME_LEVEL
+import com.example.cognicare.core.game.LevelResult
+import com.example.cognicare.core.game.levelResultAfter
 import com.example.cognicare.core.game.memoryMatchLevel
-import com.example.cognicare.core.game.nextLevelAfter
 import com.example.cognicare.data.local.AppPreferences
 import com.example.cognicare.data.model.GameOutcome
 import com.example.cognicare.data.model.GameType
@@ -41,6 +42,12 @@ data class MemoryMatchUiState(
     val isReady: Boolean = false
 ) {
     val isSolved: Boolean get() = totalPairs > 0 && matchedPairs == totalPairs
+
+    /** A clean enough board moves the patient up. The allowance is generous on purpose:
+     *  one wrong turn per pair still counts as clearing the level. */
+    val clearedLevel: Boolean get() = isSolved && mismatchedAttempts <= totalPairs
+
+    val levelResult: LevelResult get() = levelResultAfter(level, clearedLevel)
 }
 
 /**
@@ -137,13 +144,10 @@ class MemoryMatchViewModel @Inject constructor(
         if (hasReportedCompletion) return
         hasReportedCompletion = true
         viewModelScope.launch {
-            // A clean enough round moves the patient up. The allowance is generous on purpose:
-            // one wrong turn per pair still counts as clearing the level.
-            val cleared = finished.mismatchedAttempts <= finished.totalPairs
             // The write outlives this scope: the screen navigates away the moment the board is
             // solved, which would otherwise cancel the level being saved.
             withContext(NonCancellable) {
-                preferences.setGameLevel(GameType.MEMORY_MATCH, nextLevelAfter(finished.level, cleared))
+                preferences.setGameLevel(GameType.MEMORY_MATCH, finished.levelResult.nextLevel)
             }
 
             if (authRepository.session.first() == null) return@launch

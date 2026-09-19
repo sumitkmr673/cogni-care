@@ -2,6 +2,7 @@ package com.example.cognicare.core.voice
 
 import androidx.annotation.StringRes
 import com.example.cognicare.core.text.isAcceptedAnswer
+import com.example.cognicare.data.model.GameType
 
 /**
  * Everything the voice assistant or a suggestion dialog can result in. A spoken answer and a
@@ -17,8 +18,25 @@ sealed interface VoiceIntent {
 
     data object OpenGames : VoiceIntent
 
+    /** "Play memory match": open that game directly rather than the list. */
+    data class OpenGame(val gameType: GameType) : VoiceIntent
+
     data object GoHome : VoiceIntent
 }
+
+/**
+ * How the floating assistant resolves a spoken command. Named games are tried first, so
+ * "play memory match" opens that game even though "play" on its own means "show me the games".
+ * If the patient names two games at once, the first pass is ambiguous and the general pass opens
+ * the games list instead — a sensible fallback rather than a guess.
+ */
+fun resolveAssistantCommand(
+    spoken: String,
+    gameCandidates: List<Pair<VoiceIntent, List<String>>>,
+    generalCandidates: List<Pair<VoiceIntent, List<String>>>,
+    interpreter: VoiceCommandInterpreter = KeywordVoiceInterpreter
+): VoiceIntent? =
+    interpreter.interpret(spoken, gameCandidates) ?: interpreter.interpret(spoken, generalCandidates)
 
 enum class SuggestionKind { MEDICATION_CHECK, GAME_INVITE }
 
@@ -54,9 +72,9 @@ data class Suggestion(
  * the words that mean it). Returns null when nothing — or more than one thing — matched, so the
  * dialog can gently ask again rather than guess.
  *
- * The keyword version below runs fully on the device. A server-side interpreter (Whisper + Qwen
- * in cogni-care/Models) can implement this same interface later; the dialog and ViewModel will
- * not change, and the tap buttons keep working when that server is unreachable.
+ * The keyword version below runs fully on the device. It is the fallback: spoken answers go to
+ * the voice service (Qwen, see VoiceRepository) first, and this decides only when that service
+ * can't be reached. The tap buttons need neither.
  */
 fun interface VoiceCommandInterpreter {
     fun interpret(spoken: String, candidates: List<Pair<VoiceIntent, List<String>>>): VoiceIntent?

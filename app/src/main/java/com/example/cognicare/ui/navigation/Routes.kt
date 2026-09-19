@@ -10,12 +10,22 @@ import kotlinx.serialization.Serializable
 @Serializable data object PatientLoginRoute
 @Serializable data object PatientDeviceSetupRoute
 @Serializable data object CaregiverLoginRoute
+@Serializable data object CaregiverRegisterRoute
 
 // Patient graph
 @Serializable data object PatientHomeRoute
 @Serializable data object GamesHubRoute
 @Serializable data class GameRoute(val gameType: String)
-@Serializable data object GameCompleteRoute
+/**
+ * Shown after any game. For the levelled games (Memory Match, Pattern Recall) [gameType] and the
+ * level outcome let the screen offer "Play level N" or "Play again"; talking games leave them unset.
+ */
+@Serializable
+data class GameCompleteRoute(
+    val gameType: String? = null,
+    val nextLevel: Int = 0,
+    val leveledUp: Boolean = false
+)
 
 // Caregiver (doctor) graph
 @Serializable data object CaregiverOverviewRoute

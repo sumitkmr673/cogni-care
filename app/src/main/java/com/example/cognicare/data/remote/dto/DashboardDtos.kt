@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PatientSummaryDto(
     val id: String,
+    /** "PT-XXXXXXXX" — what another caregiver types to link this patient. */
+    val public_id: String? = null,
     val display_name: String,
     val preferred_language: String? = null,
     val timezone: String? = null,
@@ -18,9 +20,16 @@ data class PatientsResponseDto(
     val patients: List<PatientSummaryDto>
 )
 
+/** POST /patients/link */
+@Serializable
+data class PatientLinkRequestDto(
+    val public_id: String
+)
+
 @Serializable
 data class PatientProfileDto(
     val id: String,
+    val public_id: String? = null,
     val display_name: String,
     val preferred_language: String? = null,
     val timezone: String? = null,

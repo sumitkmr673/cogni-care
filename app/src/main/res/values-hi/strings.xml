@@ -141,6 +141,8 @@
     <string name="games_lead">आराम से लें। कोई जल्दी नहीं है।</string>
     <string name="game_level">स्तर %1$d / %2$d</string>
     <string name="game_level_up">नया स्तर खुल गया!</string>
+    <string name="game_play_level">स्तर %1$d खेलें</string>
+    <string name="game_play_again">फिर से खेलें</string>
     <string name="game_memory_match">जोड़ी मिलान</string>
     <string name="game_memory_match_desc">मेल खाती तस्वीरों की जोड़ियाँ खोजें</string>
     <string name="game_pattern_recall">क्रम स्मरण</string>
@@ -182,6 +184,8 @@
     <string name="speech_button_idle">बोलने के लिए टैप करें</string>
     <string name="speech_button_listening">सुन रहे हैं… रोकने के लिए टैप करें</string>
     <string name="speech_listening_hint">मैं सुन रहा हूँ। अपना उत्तर बोलें।</string>
+    <string name="speech_transcribing">एक पल, आपकी बात समझ रहे हैं…</string>
+    <string name="speech_say_again">माफ़ कीजिए, सुन नहीं पाया। कृपया एक बार फिर बोलिए।</string>
     <string name="speech_heard">“%1$s”</string>
     <string name="speech_error_no_match">क्षमा करें, मैं समझ नहीं पाया। फिर कोशिश करने के लिए टैप करें, या उत्तर चुनें।</string>
     <string name="speech_error_permission">CogniCare के लिए माइक्रोफ़ोन बंद है। आप फिर भी उत्तर चुन सकते हैं।</string>
@@ -316,6 +320,35 @@
     <string name="patients_add_title">मरीज़ जोड़ें</string>
     <string name="patients_add_body">नया मरीज़ लिंक करने के लिए मरीज़ या उनके अभिभावक की सूचित सहमति आवश्यक है।</string>
 
+    <!-- Caregiver sign-up and patient linking -->
+    <string name="caregiver_login_create_account">नए हैं? देखभालकर्ता खाता बनाएँ</string>
+    <string name="register_eyebrow">देखभालकर्ता और डॉक्टर</string>
+    <string name="register_title">देखभालकर्ता खाता बनाएँ</string>
+    <string name="register_subtitle">परिवार के सदस्यों, डॉक्टरों और पेशेवर देखभालकर्ताओं के लिए। मरीज़ों को उनके देखभालकर्ता जोड़ते हैं।</string>
+    <string name="label_full_name">आपका पूरा नाम</string>
+    <string name="label_phone_optional">फ़ोन (वैकल्पिक)</string>
+    <string name="register_type_label">मैं हूँ</string>
+    <string name="caregiver_type_family">परिवार का सदस्य</string>
+    <string name="caregiver_type_doctor">डॉक्टर</string>
+    <string name="caregiver_type_professional">पेशेवर देखभालकर्ता</string>
+    <string name="caregiver_type_other">अन्य</string>
+    <string name="register_password_hint">कम से कम 8 अक्षर</string>
+    <string name="register_submit">खाता बनाएँ</string>
+    <string name="register_have_account">पहले से खाता है? साइन इन करें</string>
+    <string name="error_name_required">अपना नाम दर्ज करें।</string>
+    <string name="error_password_too_short">कम से कम 8 अक्षर रखें।</string>
+    <string name="error_email_taken">इस ईमेल से पहले से एक खाता है। साइन इन करके देखें।</string>
+    <string name="error_register_invalid">कुछ विवरण स्वीकार नहीं हुए। उन्हें जाँचें और फिर कोशिश करें।</string>
+    <string name="link_patient_title">मरीज़ जोड़ें</string>
+    <string name="link_patient_body">मरीज़ के परिवार या डॉक्टर से उनकी मरीज़ आईडी माँगें। यह PT-AB12CD34 जैसी दिखती है।</string>
+    <string name="label_patient_id">मरीज़ आईडी</string>
+    <string name="link_patient_submit">मरीज़ जोड़ें</string>
+    <string name="link_patient_success">%1$s अब आपके खाते से जुड़ गए हैं।</string>
+    <string name="link_error_invalid_id">यह मरीज़ आईडी जैसा नहीं दिखता। यह PT-AB12CD34 जैसा होना चाहिए।</string>
+    <string name="link_error_not_found">इस आईडी का कोई मरीज़ नहीं है। जाँचकर फिर कोशिश करें।</string>
+    <string name="link_error_already_linked">यह मरीज़ पहले से आपके खाते से जुड़ा है।</string>
+    <string name="patients_public_id">मरीज़ आईडी: %1$s</string>
+
     <!-- Settings -->
     <string name="settings_eyebrow">प्राथमिकताएँ</string>
     <string name="settings_title">सेटिंग्स</string>
@@ -348,11 +381,16 @@
     <!-- Voice assistant -->
     <string name="assistant_open">आवाज़ सहायक खोलें</string>
     <string name="assistant_back_to_game">खेल पर वापस जाएँ</string>
-    <string name="assistant_not_understood">मैं खेल खेलने या होम पर लौटने में आपकी मदद कर सकता हूँ। बस “खेल” या “घर” कहें।</string>
+    <string name="assistant_not_understood">+</string>
     <string name="assistant_going_home">चलिए होम पर चलते हैं।</string>
     <string name="assistant_games_words">खेल, गेम, खेलना, game, play</string>
     <string name="assistant_home_words">घर, होम, वापस, मुख्य, home</string>
-
+    <string name="assistant_game_memory_match_words">जोड़ी, जोड़ियाँ, जोड़ी मिलान, मिलान, कार्ड, memory match</string>
+    <string name="assistant_game_pattern_recall_words">क्रम, क्रम स्मरण, रंग, पैटर्न, pattern</string>
+    <string name="assistant_game_object_naming_words">वस्तु, वस्तु पहचान, चीज़, तस्वीर का नाम, object</string>
+    <string name="assistant_game_daily_recall_words">दिनचर्या, मेरा दिन, दिन के बारे में, daily</string>
+    <string name="assistant_game_orientation_words">दिशा, दिशा-बोध, कौन सा दिन, हम कहाँ, orientation</string>
+    <string name="assistant_game_family_identification_words">परिवार, परिवार पहचान, चेहरे, family</string>
     <!-- Proactive suggestions -->
     <string name="suggestion_medication_question">क्या आपने अपनी दवा ले ली?</string>
     <string name="suggestion_medication_yes">हाँ, ले ली</string>

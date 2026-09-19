@@ -6,6 +6,7 @@ import com.example.cognicare.data.local.SecureCredentialStore
 import com.example.cognicare.data.model.AuthSession
 import com.example.cognicare.data.model.UserRole
 import com.example.cognicare.data.remote.CogniCareApi
+import com.example.cognicare.data.remote.dto.CaregiverRegisterRequestDto
 import com.example.cognicare.data.remote.dto.LoginRequestDto
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
@@ -92,6 +93,33 @@ class RemoteAuthRepository @Inject constructor(
             }
         }
         return result
+    }
+
+    override suspend fun registerCaregiver(registration: CaregiverRegistration): AuthResult {
+        val email = registration.email.trim()
+        try {
+            api.registerCaregiver(
+                CaregiverRegisterRequestDto(
+                    email = email,
+                    password = registration.password,
+                    display_name = registration.name.trim(),
+                    caregiver_type = registration.type.wireValue,
+                    phone = registration.phone?.trim()?.takeIf { it.isNotEmpty() }
+                )
+            )
+        } catch (error: HttpException) {
+            return AuthResult.Failure(
+                when (error.code()) {
+                    409 -> AuthFailure.EMAIL_TAKEN
+                    422 -> AuthFailure.INVALID_DETAILS
+                    else -> AuthFailure.NETWORK_ERROR
+                }
+            )
+        } catch (error: IOException) {
+            return AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+        }
+        // The backend creates the account but does not issue a token, so sign in with it now.
+        return signInCaregiver(email, registration.password)
     }
 
     override suspend fun signOut() {

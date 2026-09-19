@@ -5,6 +5,8 @@ import com.example.cognicare.data.remote.AuthInterceptor
 import com.example.cognicare.data.remote.BaseUrlInterceptor
 import com.example.cognicare.data.remote.CogniCareApi
 import com.example.cognicare.data.remote.TokenAuthenticator
+import com.example.cognicare.data.remote.VoiceApi
+import com.example.cognicare.data.remote.VoiceBaseUrlInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,7 +18,13 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+/** The app-only voice service's client, kept apart from the shared backend's. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class VoiceService
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -67,4 +75,43 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideCogniCareApi(retrofit: Retrofit): CogniCareApi = retrofit.create(CogniCareApi::class.java)
+
+    /**
+     * Same token and silent re-login as the main client, but short timeouts: when the GPU machine
+     * is off, the patient should hear back from on-device matching within a few seconds rather
+     * than wait out the main client's 20 s.
+     */
+    @Provides
+    @Singleton
+    @VoiceService
+    fun provideVoiceOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        voiceBaseUrlInterceptor: VoiceBaseUrlInterceptor,
+        tokenAuthenticator: TokenAuthenticator
+    ): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+        }
+        return OkHttpClient.Builder()
+            .addInterceptor(voiceBaseUrlInterceptor)
+            .addInterceptor(authInterceptor)
+            .addInterceptor(logging)
+            .authenticator(tokenAuthenticator)
+            .connectTimeout(3, TimeUnit.SECONDS)
+            // Whisper on a long Daily Recall answer takes several seconds.
+            .readTimeout(25, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideVoiceApi(@VoiceService okHttpClient: OkHttpClient, json: Json): VoiceApi =
+        Retrofit.Builder()
+            // VoiceBaseUrlInterceptor sets the real origin per request, as for the main API.
+            .baseUrl(BuildConfig.API_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(VoiceApi::class.java)
 }

@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.example.cognicare.core.game.LevelResult
 import com.example.cognicare.core.security.AppArea
 import com.example.cognicare.core.security.RequireArea
 import com.example.cognicare.data.model.AuthSession
@@ -39,6 +40,15 @@ fun PatientNavHost(
         VoiceAssistantOverlay(
             isInGame = isInGame,
             onOpenGames = { navController.navigate(GamesHubRoute) { launchSingleTop = true } },
+            onOpenGame = { game ->
+                // Always Home → Games → game, whatever screen the request came from, so "Back to
+                // games" and "Play again" behave exactly as when the game is tapped in the list.
+                navController.navigate(GamesHubRoute) {
+                    popUpTo<PatientHomeRoute> { inclusive = false }
+                    launchSingleTop = true
+                }
+                navController.navigate(GameRoute(game.name))
+            },
             onGoHome = { navController.popBackStack(PatientHomeRoute, inclusive = false) }
         ) {
             NavHost(navController = navController, startDestination = PatientHomeRoute) {
@@ -63,12 +73,18 @@ fun PatientNavHost(
                     val gameType = GameType.entries.firstOrNull { it.name == gameName }
                     val onBack: () -> Unit = { navController.navigateUp() }
                     val onComplete: () -> Unit = {
-                        navController.navigate(GameCompleteRoute) { launchSingleTop = true }
+                        navController.navigate(GameCompleteRoute()) { launchSingleTop = true }
+                    }
+                    // Levelled games also pass which level comes next, for "Play level N".
+                    val onLevelComplete: (LevelResult) -> Unit = { result ->
+                        navController.navigate(GameCompleteRoute(gameName, result.nextLevel, result.leveledUp)) {
+                            launchSingleTop = true
+                        }
                     }
 
                     when (gameType) {
-                        GameType.MEMORY_MATCH -> MemoryMatchScreen(languageLabel = languageLabel, onComplete = onComplete)
-                        GameType.PATTERN_RECALL -> PatternRecallScreen(languageLabel = languageLabel, onComplete = onComplete)
+                        GameType.MEMORY_MATCH -> MemoryMatchScreen(languageLabel = languageLabel, onComplete = onLevelComplete)
+                        GameType.PATTERN_RECALL -> PatternRecallScreen(languageLabel = languageLabel, onComplete = onLevelComplete)
                         GameType.OBJECT_NAMING -> ObjectNamingScreen(languageLabel, onBack, onComplete)
                         GameType.DAILY_RECALL -> DailyRecallScreen(languageLabel, onBack, onComplete)
                         GameType.ORIENTATION -> OrientationScreen(languageLabel, onBack, onComplete)
@@ -76,9 +92,21 @@ fun PatientNavHost(
                         null -> Unit
                     }
                 }
-                composable<GameCompleteRoute> {
+                composable<GameCompleteRoute> { entry ->
+                    val completed = entry.toRoute<GameCompleteRoute>()
+                    val onPlayNext: (() -> Unit)? = completed.gameType?.let { game ->
+                        {
+                            // Swap the finished game and this screen for a fresh game; its
+                            // ViewModel reads the level that was just saved.
+                            navController.navigate(GameRoute(game)) {
+                                popUpTo<GamesHubRoute> { inclusive = false }
+                            }
+                        }
+                    }
                     GameCompleteScreen(
                         languageLabel = languageLabel,
+                        levelResult = completed.gameType?.let { LevelResult(completed.nextLevel, completed.leveledUp) },
+                        onPlayNext = onPlayNext,
                         // Pop the finished game and its completion screen off in one go.
                         onBackToGames = { navController.popBackStack(GamesHubRoute, inclusive = false) }
                     )

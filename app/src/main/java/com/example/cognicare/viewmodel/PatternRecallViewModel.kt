@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cognicare.core.game.MAX_GAME_LEVEL
 import com.example.cognicare.core.game.MIN_GAME_LEVEL
-import com.example.cognicare.core.game.nextLevelAfter
+import com.example.cognicare.core.game.LevelResult
+import com.example.cognicare.core.game.levelResultAfter
 import com.example.cognicare.core.game.patternRecallLevel
 import com.example.cognicare.data.local.AppPreferences
 import com.example.cognicare.data.model.GameOutcome
@@ -62,6 +63,11 @@ data class PatternRecallUiState(
     val isReady: Boolean = false
 ) {
     val isComplete: Boolean get() = phase == PatternPhase.COMPLETE
+
+    /** True when the patient finished every round rather than running out of attempts. */
+    val clearedLevel: Boolean get() = roundsCompleted >= winRound
+
+    val levelResult: LevelResult get() = levelResultAfter(level, clearedLevel)
 
     companion object {
         /** Default rounds, used at level 1 and by tests that construct a bare engine. */
@@ -169,8 +175,7 @@ class PatternRecallEngine(
         }
     }
 
-    /** True when the patient finished every round rather than running out of attempts. */
-    fun clearedLevel(): Boolean = state.roundsCompleted >= state.winRound
+    fun clearedLevel(): Boolean = state.clearedLevel
 
     private fun randomColor(): PatternColor = PatternColor.entries[random.nextInt(PatternColor.entries.size)]
 }
@@ -237,10 +242,7 @@ class PatternRecallViewModel @Inject constructor(
             // The screen navigates away as soon as the game completes, cancelling this scope;
             // NonCancellable keeps the level from being silently lost.
             withContext(NonCancellable) {
-                preferences.setGameLevel(
-                    GameType.PATTERN_RECALL,
-                    nextLevelAfter(state.level, engine.clearedLevel())
-                )
+                preferences.setGameLevel(GameType.PATTERN_RECALL, state.levelResult.nextLevel)
             }
 
             if (authRepository.session.first() == null) return@launch

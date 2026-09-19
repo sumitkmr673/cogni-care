@@ -1,5 +1,6 @@
 package com.example.cognicare.repository
 
+import com.example.cognicare.core.account.CaregiverType
 import com.example.cognicare.data.model.AuthSession
 import kotlinx.coroutines.flow.Flow
 
@@ -38,12 +39,34 @@ interface AuthRepository {
 
     suspend fun signInCaregiver(email: String, password: String): AuthResult
 
+    /**
+     * Creates a caregiver account, then signs straight into it. Patients have no sign-up: a
+     * caregiver adds them, so someone living with dementia never has to manage an account.
+     */
+    suspend fun registerCaregiver(registration: CaregiverRegistration): AuthResult
+
     suspend fun signOut()
 }
+
+data class CaregiverRegistration(
+    val name: String,
+    val email: String,
+    val password: String,
+    val type: CaregiverType,
+    val phone: String? = null
+)
 
 sealed interface AuthResult {
     data class Success(val session: AuthSession) : AuthResult
     data class Failure(val reason: AuthFailure) : AuthResult
 }
 
-enum class AuthFailure { NAME_NOT_RECOGNIZED, LOCKED_OUT, INVALID_CREDENTIALS, NETWORK_ERROR, NOT_SET_UP }
+enum class AuthFailure {
+    NAME_NOT_RECOGNIZED, LOCKED_OUT, INVALID_CREDENTIALS, NETWORK_ERROR, NOT_SET_UP,
+
+    /** Sign-up: an account with this email already exists. */
+    EMAIL_TAKEN,
+
+    /** Sign-up: the server refused the details (the form checks the known rules first). */
+    INVALID_DETAILS
+}

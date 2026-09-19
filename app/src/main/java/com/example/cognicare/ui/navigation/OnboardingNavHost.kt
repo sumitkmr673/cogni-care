@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.cognicare.core.security.AppArea
 import com.example.cognicare.ui.screens.onboarding.CaregiverLoginScreen
+import com.example.cognicare.ui.screens.onboarding.CaregiverRegisterScreen
 import com.example.cognicare.ui.screens.onboarding.ConsentScreen
 import com.example.cognicare.ui.screens.onboarding.IdentifyScreen
 import com.example.cognicare.ui.screens.onboarding.LanguageScreen
@@ -95,7 +96,17 @@ fun OnboardingNavHost(
             }
             composable<CaregiverLoginRoute> {
                 CaregiverTheme {
-                    CaregiverLoginScreen(onBack = { navController.navigateUp() })
+                    CaregiverLoginScreen(
+                        onBack = { navController.navigateUp() },
+                        onCreateAccount = { navController.navigate(CaregiverRegisterRoute) { launchSingleTop = true } }
+                    )
+                }
+            }
+            composable<CaregiverRegisterRoute> {
+                // A successful sign-up saves the session, which switches the app to the caregiver
+                // screens on its own; "back" here returns to the sign-in form.
+                CaregiverTheme {
+                    CaregiverRegisterScreen(onBack = { navController.navigateUp() })
                 }
             }
         }

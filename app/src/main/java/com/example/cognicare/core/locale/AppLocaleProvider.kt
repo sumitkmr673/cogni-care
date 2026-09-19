@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,6 +47,19 @@ class AppLocaleProvider @Inject constructor(
 
     fun getString(@StringRes resId: Int, vararg formatArgs: Any): String =
         localizedContext.getString(resId, *formatArgs)
+
+    private val contextsByLanguage = ConcurrentHashMap<AppLanguage, Context>()
+
+    /** [resId] in [language], whatever the chosen one is. */
+    fun getStringIn(@StringRes resId: Int, language: AppLanguage): String =
+        contextsByLanguage.getOrPut(language) { createContextForLanguage(language) }.getString(resId)
+
+    /**
+     * [resId] in every translated language, without duplicates. For answer checking: a patient
+     * using the English app who says "सेब" still named the apple.
+     */
+    fun inEveryLanguage(@StringRes resId: Int): List<String> =
+        AppLanguage.entries.filter { it.isTranslated }.map { getStringIn(resId, it) }.distinct()
 
     private fun createContextForLanguage(appLanguage: AppLanguage): Context {
         val targetLocale = Locale.forLanguageTag(appLanguage.tag)

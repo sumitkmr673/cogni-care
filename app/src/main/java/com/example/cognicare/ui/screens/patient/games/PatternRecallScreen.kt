@@ -41,6 +41,7 @@ import com.example.cognicare.ui.components.LeadText
 import com.example.cognicare.ui.components.PatientScreen
 import com.example.cognicare.ui.components.ScreenTitle
 import com.example.cognicare.ui.theme.PatientTheme
+import com.example.cognicare.core.game.LevelResult
 import com.example.cognicare.viewmodel.PatternColor
 import com.example.cognicare.viewmodel.PatternPhase
 import com.example.cognicare.viewmodel.PatternRecallUiState
@@ -49,14 +50,14 @@ import com.example.cognicare.viewmodel.PatternRecallViewModel
 @Composable
 fun PatternRecallScreen(
     languageLabel: String,
-    onComplete: () -> Unit,
+    onComplete: (LevelResult) -> Unit,
     viewModel: PatternRecallViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val latestOnComplete by rememberUpdatedState(onComplete)
 
     LaunchedEffect(state.isComplete) {
-        if (state.isComplete) latestOnComplete()
+        if (state.isComplete) latestOnComplete(state.levelResult)
     }
 
     PatientScreen(languageLabel = languageLabel) {

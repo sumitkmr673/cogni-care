@@ -44,7 +44,9 @@ data class PatientProfile(
     val id: String,
     val name: String,
     val languageTag: String,
-    val timeZoneId: String
+    val timeZoneId: String,
+    /** "PT-XXXXXXXX": shown to caregivers so they can share it for linking. */
+    val publicId: String? = null
 )
 
 data class GameSession(

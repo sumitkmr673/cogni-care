@@ -1,13 +1,16 @@
 package com.example.cognicare.viewmodel
 
 import com.example.cognicare.R
+import com.example.cognicare.core.locale.AppLanguage
 import com.example.cognicare.core.locale.AppLocaleProvider
+import com.example.cognicare.core.text.SpokenAliases
 import com.example.cognicare.data.model.GameType
 import com.example.cognicare.repository.AuthRepository
 import com.example.cognicare.repository.CareRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.DateFormatSymbols
 import java.util.Calendar
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -42,6 +45,25 @@ class OrientationViewModel @Inject constructor(
             locale.getString(R.string.orientation_place_hospital),
             locale.getString(R.string.orientation_place_market)
         )
+        // Every choice in every language (native script and romanised), for mixed-language answers.
+        val placeWords = listOf(
+            locale.inEveryLanguage(R.string.orientation_place_home) + listOf("house") + SpokenAliases.places["home"].orEmpty(),
+            locale.inEveryLanguage(R.string.orientation_place_hospital) + SpokenAliases.places["hospital"].orEmpty(),
+            locale.inEveryLanguage(R.string.orientation_place_market) + SpokenAliases.places["market"].orEmpty()
+        )
+        val allSymbols = AppLanguage.entries.filter { it.isTranslated }
+            .map { DateFormatSymbols.getInstance(Locale.forLanguageTag(it.tag)) }
+        // By Calendar value: weekdays[1] is Sunday, months[0] is January (as in DateFormatSymbols).
+        val weekdayWords = (Calendar.SUNDAY..Calendar.SATURDAY).associateWith { day ->
+            allSymbols.map { it.weekdays[day] } + SpokenAliases.weekdays[day].orEmpty()
+        }
+        val monthWords = (0..11).associateWith { index -> allSymbols.map { it.months[index] } }
+        val monthOptions = quizChoices(month, symbols.months.filter { it.isNotBlank() })
+        val weekdayOptions = quizChoices(weekday, symbols.weekdays.filter { it.isNotBlank() })
+        // Whisper's hint covers only the choices on screen (all of them alike): all twelve months
+        // in three languages would overflow its prompt.
+        val monthHint = speechHintOf(monthOptions.map { monthWords.getValue(symbols.months.indexOf(it)) })
+        val weekdayHint = speechHintOf(weekdayOptions.map { weekdayWords.getValue(symbols.weekdays.indexOf(it)) })
         val nearbyDates = listOf(-3, -2, -1, 1, 2, 3)
             .map { date + it }
             .filter { it in 1..daysInMonth }
@@ -63,8 +85,9 @@ class OrientationViewModel @Inject constructor(
                 visual = QuizVisual.Emoji("🗓️"),
                 correctOption = month,
                 answerLabel = month,
-                acceptedAnswers = listOf(month),
-                options = quizChoices(month, symbols.months.filter { it.isNotBlank() })
+                acceptedAnswers = (listOf(month) + monthWords.getValue(now.get(Calendar.MONTH))).distinct(),
+                options = monthOptions,
+                speechHint = monthHint
             ),
             VoiceQuizQuestion(
                 id = "date",
@@ -81,8 +104,9 @@ class OrientationViewModel @Inject constructor(
                 visual = QuizVisual.Emoji("☀️"),
                 correctOption = weekday,
                 answerLabel = weekday,
-                acceptedAnswers = listOf(weekday),
-                options = quizChoices(weekday, symbols.weekdays.filter { it.isNotBlank() })
+                acceptedAnswers = (listOf(weekday) + weekdayWords.getValue(now.get(Calendar.DAY_OF_WEEK))).distinct(),
+                options = weekdayOptions,
+                speechHint = weekdayHint
             ),
             VoiceQuizQuestion(
                 id = "place",
@@ -90,9 +114,9 @@ class OrientationViewModel @Inject constructor(
                 visual = QuizVisual.Emoji("🏠"),
                 correctOption = home,
                 answerLabel = home,
-                // The English words stay accepted so a mixed-language answer still counts.
-                acceptedAnswers = listOf(home, "home", "house"),
-                options = quizChoices(home, places)
+                acceptedAnswers = placeWords[0],
+                options = quizChoices(home, places),
+                speechHint = speechHintOf(placeWords)
             )
         )
     }

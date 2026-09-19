@@ -105,7 +105,10 @@ fun VoiceQuizScreen(
         VoiceAnswerCapture(
             onResult = onSpeechResult,
             enabled = state.isAwaitingAnswer,
-            resetKey = state.questionIndex
+            resetKey = state.questionIndex,
+            useWhisper = true,
+            // Every answer on screen, never only the correct one, so a mumble isn't steered right.
+            whisperHint = question.speechHint ?: question.options.joinToString(", ")
         )
 
         if (state.feedback != AnswerFeedback.NONE) {

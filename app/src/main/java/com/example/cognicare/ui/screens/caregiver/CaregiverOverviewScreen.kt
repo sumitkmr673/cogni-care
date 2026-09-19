@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.SportsEsports
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -95,11 +96,40 @@ fun CaregiverOverviewScreen(
                 SafetyBanner()
             }
             state.isLoading -> LoadingBlock()
-            else -> PlannedFeatureCard(
-                icon = Icons.Rounded.PersonAdd,
-                title = stringResource(R.string.no_patients_title),
-                body = stringResource(R.string.no_patients_body)
+            // A new caregiver has no patient yet, and the patient chip above (normally the way to
+            // the Patients screen) only exists once there is one — so this card must lead there.
+            else -> NoPatientsCard(onLinkPatient = onOpenPatients)
+        }
+    }
+}
+
+@Composable
+private fun NoPatientsCard(onLinkPatient: () -> Unit) {
+    DashboardCard(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.PersonAdd, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = stringResource(R.string.no_patients_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.no_patients_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = CaregiverTheme.colors.mutedText
+        )
+        Spacer(Modifier.height(14.dp))
+        Button(
+            onClick = onLinkPatient,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(stringResource(R.string.link_patient_title))
         }
     }
 }

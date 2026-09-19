@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
+import com.example.cognicare.core.audio.EndpointConfig
 import com.example.cognicare.ui.components.BackTextButton
 import com.example.cognicare.ui.components.DemoNote
 import com.example.cognicare.ui.components.Eyebrow
@@ -50,7 +51,13 @@ fun DailyRecallScreen(
         EmojiTile(emoji = "☀️", modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(20.dp))
 
-        VoiceAnswerCapture(onResult = viewModel::onSpeechResult, resetKey = state.transcript.size)
+        VoiceAnswerCapture(
+            onResult = viewModel::onSpeechResult,
+            resetKey = state.transcript.size,
+            useWhisper = true,
+            // Talking about the day: longer pauses between thoughts shouldn't end the recording.
+            endpoint = EndpointConfig.LONG_ANSWER
+        )
 
         if (state.transcript.isNotEmpty()) {
             Spacer(Modifier.height(24.dp))

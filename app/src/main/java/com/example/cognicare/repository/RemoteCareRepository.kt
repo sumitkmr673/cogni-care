@@ -17,6 +17,7 @@ import com.example.cognicare.data.model.Reminder
 import com.example.cognicare.data.model.ReminderKind
 import com.example.cognicare.data.model.SyncStatus
 import com.example.cognicare.data.remote.CogniCareApi
+import com.example.cognicare.data.remote.dto.PatientLinkRequestDto
 import com.example.cognicare.data.remote.dto.PatientProfileDto
 import com.example.cognicare.data.remote.dto.PatientSummaryDto
 import com.example.cognicare.data.remote.dto.RecentGameSessionDto
@@ -57,6 +58,21 @@ class RemoteCareRepository @Inject constructor(
             .onFailure { Log.w(TAG, "listPatients failed", it) }
             .getOrDefault(emptyList())
         emit(patients.map { it.toPatientProfile() })
+    }
+
+    override suspend fun linkPatient(publicId: String): LinkPatientResult = try {
+        LinkPatientResult.Linked(api.linkPatient(PatientLinkRequestDto(publicId)).toPatientProfile())
+    } catch (error: HttpException) {
+        when (error.code()) {
+            404 -> LinkPatientResult.NotFound
+            409 -> LinkPatientResult.AlreadyLinked
+            else -> {
+                Log.w(TAG, "linkPatient failed: HTTP ${error.code()}", error)
+                LinkPatientResult.NetworkError
+            }
+        }
+    } catch (error: IOException) {
+        LinkPatientResult.NetworkError
     }
 
     override fun observeReminders(patientId: String): Flow<List<Reminder>> = flow {
@@ -203,14 +219,16 @@ private fun PatientSummaryDto.toPatientProfile() = PatientProfile(
     id = id,
     name = display_name,
     languageTag = languageNameToTag(preferred_language),
-    timeZoneId = timezone ?: "Asia/Kolkata"
+    timeZoneId = timezone ?: "Asia/Kolkata",
+    publicId = public_id
 )
 
 private fun PatientProfileDto.toPatientProfile() = PatientProfile(
     id = id,
     name = display_name,
     languageTag = languageNameToTag(preferred_language),
-    timeZoneId = timezone ?: "Asia/Kolkata"
+    timeZoneId = timezone ?: "Asia/Kolkata",
+    publicId = public_id
 )
 
 // The backend stores a full language name (see PROFILE_DATA in seed_demo.py), not an IETF tag.

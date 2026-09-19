@@ -40,8 +40,16 @@ data class VoiceQuizQuestion(
     /** Words that count as correct when spoken or tapped. */
     val acceptedAnswers: List<String>,
     val options: List<String>,
-    val visual: QuizVisual? = null
+    val visual: QuizVisual? = null,
+    /**
+     * Words to steer Whisper's spelling, e.g. every choice in every language. Must cover all the
+     * choices alike, never only the correct one. Null: the on-screen [options].
+     */
+    val speechHint: String? = null
 )
+
+/** Whisper's hint from word groups: one group per choice, deduplicated, in order. */
+fun speechHintOf(groups: List<List<String>>): String = groups.flatten().distinct().joinToString(", ")
 
 enum class AnswerFeedback { NONE, CORRECT, INCORRECT }
 

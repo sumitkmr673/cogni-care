@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -41,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -51,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
+import com.example.cognicare.data.model.GameType
 import com.example.cognicare.viewmodel.AssistantNavigation
 import com.example.cognicare.viewmodel.VoiceAssistantViewModel
 
@@ -85,6 +88,7 @@ private val CollapsedAssistantInset = 96.dp
 fun VoiceAssistantOverlay(
     isInGame: Boolean,
     onOpenGames: () -> Unit,
+    onOpenGame: (GameType) -> Unit,
     onGoHome: () -> Unit,
     viewModel: VoiceAssistantViewModel = hiltViewModel(),
     content: @Composable () -> Unit
@@ -92,12 +96,14 @@ fun VoiceAssistantOverlay(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val latestOnOpenGames by rememberUpdatedState(onOpenGames)
     val latestOnGoHome by rememberUpdatedState(onGoHome)
+    val latestOnOpenGame by rememberUpdatedState(onOpenGame)
     var panelOpen by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(viewModel) {
         viewModel.navigation.collect { target ->
             when (target) {
                 AssistantNavigation.Games -> latestOnOpenGames()
+                is AssistantNavigation.Game -> latestOnOpenGame(target.gameType)
                 AssistantNavigation.Home -> latestOnGoHome()
             }
         }
@@ -177,7 +183,8 @@ private fun ExpandedAssistant(
             isListening = controller.isListening,
             onClick = capture.onSpeakClick,
             size = 124.dp,
-            idleIcon = Icons.Rounded.SmartToy
+            idleIcon = Icons.Rounded.SmartToy,
+            outlined = true
         )
     }
 }
@@ -192,8 +199,10 @@ private fun CollapsedAssistant(onClick: () -> Unit, modifier: Modifier = Modifie
             .size(64.dp)
             .semantics { contentDescription = description },
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = Color.White,
+        // Same white-with-green-border look as the full-size assistant button.
+        color = Color.White,
+        contentColor = MaterialTheme.colorScheme.primary,
+        border = BorderStroke(2.5.dp, lerp(MaterialTheme.colorScheme.primary, Color.White, ASSISTANT_BORDER_LIGHTEN)),
         shadowElevation = 8.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -240,7 +249,8 @@ private fun BoxScope.AssistantPanel(
                 isListening = controller.isListening,
                 onClick = capture.onSpeakClick,
                 size = 140.dp,
-                idleIcon = Icons.Rounded.SmartToy
+                idleIcon = Icons.Rounded.SmartToy,
+                outlined = true
             )
             if (status != null) {
                 Spacer(Modifier.height(12.dp))

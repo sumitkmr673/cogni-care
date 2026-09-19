@@ -37,6 +37,7 @@ import com.example.cognicare.ui.components.LeadText
 import com.example.cognicare.ui.components.PatientScreen
 import com.example.cognicare.ui.components.ScreenTitle
 import com.example.cognicare.ui.theme.PatientTheme
+import com.example.cognicare.core.game.LevelResult
 import com.example.cognicare.viewmodel.MemoryCard
 import com.example.cognicare.viewmodel.MemoryMatchViewModel
 
@@ -45,14 +46,14 @@ private const val COLUMNS = 3
 @Composable
 fun MemoryMatchScreen(
     languageLabel: String,
-    onComplete: () -> Unit,
+    onComplete: (LevelResult) -> Unit,
     viewModel: MemoryMatchViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val latestOnComplete by rememberUpdatedState(onComplete)
 
     LaunchedEffect(state.isSolved) {
-        if (state.isSolved) latestOnComplete()
+        if (state.isSolved) latestOnComplete(state.levelResult)
     }
 
     PatientScreen(languageLabel = languageLabel) {

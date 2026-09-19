@@ -1,6 +1,10 @@
 package com.example.cognicare.data.remote
 
 import com.example.cognicare.data.remote.dto.AuthenticatedUserDto
+import com.example.cognicare.data.remote.dto.CaregiverRegisterRequestDto
+import com.example.cognicare.data.remote.dto.CaregiverRegisterResponseDto
+import com.example.cognicare.data.remote.dto.PatientLinkRequestDto
+import com.example.cognicare.data.remote.dto.PatientProfileDto
 import com.example.cognicare.data.remote.dto.DashboardResponseDto
 import com.example.cognicare.data.remote.dto.GameResultDto
 import com.example.cognicare.data.remote.dto.GameSessionDto
@@ -26,6 +30,9 @@ interface CogniCareApi {
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequestDto): TokenResponseDto
 
+    @POST("auth/register")
+    suspend fun registerCaregiver(@Body body: CaregiverRegisterRequestDto): CaregiverRegisterResponseDto
+
     // The token is passed explicitly: this runs right after login, before the token is saved anywhere.
     @GET("auth/me")
     suspend fun currentUser(@Header("Authorization") authorization: String): AuthenticatedUserDto
@@ -47,6 +54,10 @@ interface CogniCareApi {
 
     @GET("patients")
     suspend fun listPatients(): PatientsResponseDto
+
+    /** Caregivers only. 404 when no patient has that ID, 409 when already linked. */
+    @POST("patients/link")
+    suspend fun linkPatient(@Body body: PatientLinkRequestDto): PatientProfileDto
 
     @GET("patients/{patientId}/dashboard")
     suspend fun getDashboard(@Path("patientId") patientId: String): DashboardResponseDto

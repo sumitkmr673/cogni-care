@@ -14,10 +14,20 @@ import com.example.cognicare.core.voice.Suggestions
 import com.example.cognicare.core.voice.VoiceCommandInterpreter
 import com.example.cognicare.core.voice.VoiceIntent
 import com.example.cognicare.core.voice.acknowledgementFor
+import com.example.cognicare.core.voice.resolveAssistantCommand
+import com.example.cognicare.core.voice.voiceWordsRes
+import com.example.cognicare.core.voice.VoiceChoiceSet
+import com.example.cognicare.core.voice.voiceId
+import com.example.cognicare.core.voice.voiceLabel
+import com.example.cognicare.core.voice.voiceQuestion
+import com.example.cognicare.data.model.GameType
 import com.example.cognicare.core.voice.splitAnswerWords
 import com.example.cognicare.data.model.ReminderKind
 import com.example.cognicare.repository.AuthRepository
 import com.example.cognicare.repository.CareRepository
+import com.example.cognicare.repository.VoiceChoice
+import com.example.cognicare.repository.VoiceOptionRequest
+import com.example.cognicare.repository.VoiceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -49,6 +59,7 @@ data class VoiceAssistantUiState(
 /** One-shot navigation the overlay performs; the ViewModel never holds a NavController. */
 sealed interface AssistantNavigation {
     data object Games : AssistantNavigation
+    data class Game(val gameType: GameType) : AssistantNavigation
     data object Home : AssistantNavigation
 }
 
@@ -59,12 +70,16 @@ sealed interface AssistantNavigation {
  * end in [respond] with a [VoiceIntent], so medication confirmations and game invitations are
  * handled identically however the patient answered. The tap path is entirely local, which keeps
  * suggestions answerable with no connection at all.
+ *
+ * Spoken answers go to the voice service (Qwen on the GPU machine) first. When it can't be
+ * reached, the on-device keyword [interpreter] decides instead, so voice keeps working offline.
  */
 @HiltViewModel
 class VoiceAssistantViewModel @Inject constructor(
     private val localeProvider: AppLocaleProvider,
     private val careRepository: CareRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val voiceRepository: VoiceRepository
 ) : ViewModel() {
 
     private val interpreter: VoiceCommandInterpreter = KeywordVoiceInterpreter
@@ -79,6 +94,7 @@ class VoiceAssistantViewModel @Inject constructor(
     private val queued = ArrayDeque<Suggestion>()
     private var closeJob: Job? = null
     private var assistantMessageJob: Job? = null
+    private var speechJob: Job? = null
 
     init {
         startDemoMedicationTrigger()
@@ -97,15 +113,23 @@ class VoiceAssistantViewModel @Inject constructor(
         _uiState.update { it.copy(suggestion = suggestion, suggestionNotUnderstood = false) }
     }
 
-    /** Voice path: the same interpreter a server-side model would replace. */
+    /** Voice path: Qwen when the voice service is reachable, keyword matching when it isn't. */
     fun onSuggestionSpeech(spoken: String) {
         val suggestion = _uiState.value.suggestion ?: return
-        val candidates = suggestion.options.map { it.intent to wordsFor(it) }
-        val intent = interpreter.interpret(spoken, candidates)
-        if (intent == null) {
-            _uiState.update { it.copy(suggestionNotUnderstood = true) }
-        } else {
-            respond(intent)
+        speechJob?.cancel()
+        speechJob = viewModelScope.launch {
+            val intent = interpretSpeech(
+                spoken = spoken,
+                question = suggestion.kind.voiceQuestion(),
+                intents = suggestion.options.map { it.intent }
+            ) { interpreter.interpret(spoken, suggestion.options.map { it.intent to wordsFor(it) }) }
+            // The patient may have tapped an answer while the service was thinking.
+            if (_uiState.value.suggestion != suggestion) return@launch
+            if (intent == null) {
+                _uiState.update { it.copy(suggestionNotUnderstood = true) }
+            } else {
+                respond(intent)
+            }
         }
     }
 
@@ -137,6 +161,7 @@ class VoiceAssistantViewModel @Inject constructor(
             is VoiceIntent.ConfirmMedication -> if (intent.taken) markTodaysMedicationDone()
             is VoiceIntent.RespondToGameInvite -> if (intent.accepted) navigate(AssistantNavigation.Games)
             VoiceIntent.OpenGames -> navigate(AssistantNavigation.Games)
+            is VoiceIntent.OpenGame -> navigate(AssistantNavigation.Game(intent.gameType))
             VoiceIntent.GoHome -> navigate(AssistantNavigation.Home)
         }
     }
@@ -144,16 +169,46 @@ class VoiceAssistantViewModel @Inject constructor(
     // ---- Free-form assistant (the floating robot button) --------------------------------------
 
     fun onAssistantSpeech(spoken: String) {
-        val candidates = listOf(
+        val gameCandidates = GameType.entries.map { game ->
+            VoiceIntent.OpenGame(game) to splitAnswerWords(localeProvider.getString(game.voiceWordsRes()))
+        }
+        val generalCandidates = listOf(
             VoiceIntent.OpenGames to splitAnswerWords(localeProvider.getString(R.string.assistant_games_words)),
             VoiceIntent.GoHome to splitAnswerWords(localeProvider.getString(R.string.assistant_home_words))
         )
-        when (val intent = interpreter.interpret(spoken, candidates)) {
-            null -> showAssistantMessage(R.string.assistant_not_understood)
-            else -> {
-                showAssistantMessage(acknowledgementFor(intent))
-                handle(intent)
+        speechJob?.cancel()
+        speechJob = viewModelScope.launch {
+            val intent = interpretSpeech(
+                spoken = spoken,
+                question = null,
+                intents = (gameCandidates + generalCandidates).map { it.first }
+            ) { resolveAssistantCommand(spoken, gameCandidates, generalCandidates, interpreter) }
+            when (intent) {
+                null -> showAssistantMessage(R.string.assistant_not_understood)
+                else -> {
+                    showAssistantMessage(acknowledgementFor(intent))
+                    handle(intent)
+                }
             }
+        }
+    }
+
+    /**
+     * What the patient meant, according to Qwen; [onDevice] decides only when the voice service
+     * is unavailable. Qwen's "unclear" is final — it is never overruled by a keyword guess.
+     */
+    private suspend fun interpretSpeech(
+        spoken: String,
+        question: String?,
+        intents: List<VoiceIntent>,
+        onDevice: () -> VoiceIntent?
+    ): VoiceIntent? {
+        val choices = VoiceChoiceSet(intents)
+        val options = intents.map { VoiceOptionRequest(it.voiceId(), it.voiceLabel()) }
+        return when (val choice = voiceRepository.interpret(spoken, question, options, localeProvider.language.tag)) {
+            is VoiceChoice.Chosen -> choices.intentFor(choice.id)
+            VoiceChoice.NotUnderstood -> null
+            VoiceChoice.Unavailable -> onDevice()
         }
     }
 

@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.Flow
 interface CareRepository {
     fun observePatients(patientIds: List<String>): Flow<List<PatientProfile>>
 
+    /** Links an existing patient to the signed-in caregiver by their "PT-XXXXXXXX" ID. */
+    suspend fun linkPatient(publicId: String): LinkPatientResult
+
     fun observeReminders(patientId: String): Flow<List<Reminder>>
 
     fun observeDashboard(patientId: String): Flow<PatientDashboard?>
@@ -24,4 +27,11 @@ interface CareRepository {
     /** Starts and submits a backend game session for the signed-in patient. No-ops (and never
      * throws) for a [GameType] with no backend counterpart — see [toBackendCode]. */
     suspend fun recordGameCompletion(gameType: GameType, outcome: GameOutcome)
+}
+
+sealed interface LinkPatientResult {
+    data class Linked(val patient: PatientProfile) : LinkPatientResult
+    data object NotFound : LinkPatientResult
+    data object AlreadyLinked : LinkPatientResult
+    data object NetworkError : LinkPatientResult
 }
