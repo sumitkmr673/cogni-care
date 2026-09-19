@@ -212,6 +212,16 @@ class PatientGameplayTests(unittest.TestCase):
                 is_active=True,
             )
         )
+        self.pattern_recall_game = self.store.add_game(
+            Game(
+                id=uuid4(),
+                code="PATTERN_RECALL",
+                name="Pattern Recall",
+                category="MEMORY",
+                description="Sequential visual pattern memory and recall game.",
+                is_active=True,
+            )
+        )
         self.inactive_game = self.store.add_game(
             Game(
                 id=uuid4(),
@@ -248,9 +258,11 @@ class PatientGameplayTests(unittest.TestCase):
         response = self.client.get("/games", headers=self._auth_header(self.patient_user))
         self.assertEqual(response.status_code, 200)
         games = response.json()["games"]
-        self.assertEqual(len(games), 1)
-        self.assertEqual(games[0]["id"], str(self.game.id))
-        self.assertEqual(games[0]["code"], "DAILY_RECALL")
+        self.assertEqual(len(games), 2)
+        game_codes = {item["code"]: item for item in games}
+        self.assertIn("DAILY_RECALL", game_codes)
+        self.assertIn("PATTERN_RECALL", game_codes)
+        self.assertEqual(game_codes["PATTERN_RECALL"]["category"], "MEMORY")
         self.assertNotIn(str(self.inactive_game.id), [item["id"] for item in games])
 
     def test_unauthenticated_games_request_is_rejected(self):
@@ -328,3 +340,49 @@ class PatientGameplayTests(unittest.TestCase):
             json={},
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_authenticated_patient_can_play_pattern_recall_with_android_telemetry(self):
+        # 1. Start PATTERN_RECALL session
+        start_res = self.client.post(
+            f"/games/{self.pattern_recall_game.id}/sessions",
+            headers=self._auth_header(self.patient_user),
+            json={"difficulty_level": 2},
+        )
+        self.assertEqual(start_res.status_code, 201)
+        session_id = start_res.json()["id"]
+        self.assertEqual(start_res.json()["game_id"], str(self.pattern_recall_game.id))
+        self.assertEqual(start_res.json()["difficulty_level"], 2)
+        self.assertEqual(start_res.json()["status"], "STARTED")
+
+        # 2. Submit result with exact Android telemetry fields
+        telemetry = {
+            "score": 85.0,
+            "accuracy": 85.0,
+            "correct_answers": 6,
+            "total_questions": 7,
+            "response_time_ms": 12450,
+            "mistakes": 1,
+        }
+        res = self.client.post(
+            f"/games/sessions/{session_id}/result",
+            headers=self._auth_header(self.patient_user),
+            json=telemetry,
+        )
+        self.assertEqual(res.status_code, 201)
+        body = res.json()
+        self.assertEqual(body["session_id"], session_id)
+        self.assertEqual(body["session_status"], "COMPLETED")
+        self.assertEqual(float(body["score"]), 85.0)
+        self.assertEqual(float(body["accuracy"]), 85.0)
+        self.assertEqual(body["correct_answers"], 6)
+        self.assertEqual(body["total_questions"], 7)
+        self.assertEqual(body["response_time_ms"], 12450)
+        self.assertEqual(body["mistakes"], 1)
+
+        # 3. Duplicate result submission returns 409 Conflict
+        dup_res = self.client.post(
+            f"/games/sessions/{session_id}/result",
+            headers=self._auth_header(self.patient_user),
+            json=telemetry,
+        )
+        self.assertEqual(dup_res.status_code, 409)

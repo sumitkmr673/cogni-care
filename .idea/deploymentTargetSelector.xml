@@ -7,10 +7,10 @@
       </SelectionState>
       <SelectionState runConfigName="CogniCare.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-09-11T15:59:32.206992900Z">
+        <DropdownSelection timestamp="2026-09-17T19:32:32.948353100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\INTEL\.android\avd\My_Pixel_9_Pro.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\INTEL\.android\avd\Medium_Phone.avd" />
             </handle>
           </Target>
         </DropdownSelection>

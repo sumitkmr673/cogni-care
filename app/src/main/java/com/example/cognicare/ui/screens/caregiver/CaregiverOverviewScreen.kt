@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CenterFocusStrong
 import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.SportsEsports
@@ -43,7 +42,6 @@ import com.example.cognicare.core.locale.AppLanguage
 import com.example.cognicare.core.time.isSameDay
 import com.example.cognicare.data.model.GameSession
 import com.example.cognicare.data.model.PatientDashboard
-import com.example.cognicare.data.model.Reminder
 import com.example.cognicare.ui.components.CaregiverPageHeader
 import com.example.cognicare.ui.components.CaregiverScrollPage
 import com.example.cognicare.ui.components.DashboardCard
@@ -91,7 +89,7 @@ fun CaregiverOverviewScreen(
                     trend = dashboard.trend,
                     action = { LinkAction(stringResource(R.string.action_details), onOpenPerformance) }
                 )
-                UpcomingRemindersCard(dashboard.upcomingReminders)
+                ManageRemindersCard(patientId = dashboard.patient.id)
                 RecentSessionsCard(dashboard.recentSessions, onSeeAll = onOpenPerformance)
                 SafetyBanner()
             }
@@ -242,23 +240,6 @@ private fun OverviewStats(dashboard: PatientDashboard) {
                 unit = outOf100,
                 modifier = Modifier.weight(1f).fillMaxHeight()
             )
-        }
-    }
-}
-
-@Composable
-private fun UpcomingRemindersCard(reminders: List<Reminder>) {
-    DashboardCard(Modifier.fillMaxWidth()) {
-        SectionHeader(
-            eyebrow = stringResource(R.string.reminders_eyebrow),
-            title = stringResource(R.string.reminders_title),
-            trailing = {
-                Icon(Icons.Rounded.NotificationsNone, contentDescription = null, tint = CaregiverTheme.colors.mutedText)
-            }
-        )
-        Spacer(Modifier.height(8.dp))
-        DividedList(items = reminders, emptyText = stringResource(R.string.reminders_empty)) { reminder ->
-            ReminderRow(reminder, Modifier.padding(vertical = 12.dp))
         }
     }
 }

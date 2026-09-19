@@ -23,6 +23,12 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import com.example.cognicare.data.remote.dto.ReminderCreateRequestDto
+import com.example.cognicare.data.remote.dto.ReminderStatusRequestDto
+import com.example.cognicare.data.remote.dto.ReminderUpdateRequestDto
+import retrofit2.Response
+import retrofit2.http.DELETE
+import retrofit2.http.PATCH
 
 // Matches cogni-care/backend's app/api Python routes one-for-one; see that repo's README for the full reference.
 interface CogniCareApi {
@@ -73,4 +79,32 @@ interface CogniCareApi {
 
     @GET("patients/{patientId}/reminders")
     suspend fun getReminders(@Path("patientId") patientId: String): List<ReminderItemDto>
+
+    // Managing reminders: any linked caregiver may add one; only the primary caregiver or the
+    // reminder's creator may edit, pause or delete it (the backend answers 403 otherwise).
+    @POST("patients/{patientId}/reminders")
+    suspend fun createReminder(
+        @Path("patientId") patientId: String,
+        @Body body: ReminderCreateRequestDto
+    ): ReminderItemDto
+
+    @PATCH("patients/{patientId}/reminders/{reminderId}")
+    suspend fun updateReminder(
+        @Path("patientId") patientId: String,
+        @Path("reminderId") reminderId: String,
+        @Body body: ReminderUpdateRequestDto
+    ): ReminderItemDto
+
+    @PATCH("patients/{patientId}/reminders/{reminderId}/status")
+    suspend fun setReminderStatus(
+        @Path("patientId") patientId: String,
+        @Path("reminderId") reminderId: String,
+        @Body body: ReminderStatusRequestDto
+    ): ReminderItemDto
+
+    @DELETE("patients/{patientId}/reminders/{reminderId}")
+    suspend fun deleteReminder(
+        @Path("patientId") patientId: String,
+        @Path("reminderId") reminderId: String
+    ): Response<Unit>
 }

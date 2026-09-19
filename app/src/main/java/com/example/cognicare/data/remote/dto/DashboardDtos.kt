@@ -41,6 +41,8 @@ data class PatientProfileDto(
 @Serializable
 data class CaregiverRelationshipDto(
     val caregiver_id: String,
+    /** This caregiver's own CG- id: how reminders they created are recognised as theirs. */
+    val public_id: String? = null,
     val display_name: String,
     val caregiver_type: String,
     val is_primary: Boolean
@@ -88,8 +90,36 @@ data class ReminderItemDto(
     val reminder_type: String,
     val scheduled_at: String,
     val is_recurring: Boolean,
-    val recurrence_rule: String? = null
+    val recurrence_rule: String? = null,
+    /** Paused reminders stay listed with is_active false. */
+    val is_active: Boolean = true,
+    val created_at: String? = null,
+    val created_by_caregiver_public_id: String? = null,
+    val created_by_display_name: String? = null
 )
+
+/** POST /patients/{id}/reminders. One-off reminders only for now, as on the web portal. */
+@Serializable
+data class ReminderCreateRequestDto(
+    val title: String,
+    val reminder_type: String,
+    val scheduled_at: String
+)
+
+/**
+ * PATCH /patients/{id}/reminders/{reminderId}. Only non-null fields are sent (the app's Json
+ * leaves out defaults), so recurrence and anything else not edited here stays as it was.
+ */
+@Serializable
+data class ReminderUpdateRequestDto(
+    val title: String? = null,
+    val reminder_type: String? = null,
+    val scheduled_at: String? = null
+)
+
+/** PATCH /patients/{id}/reminders/{reminderId}/status: pause or resume. */
+@Serializable
+data class ReminderStatusRequestDto(val is_active: Boolean)
 
 @Serializable
 data class DashboardResponseDto(
