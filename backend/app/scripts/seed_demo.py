@@ -42,6 +42,7 @@ GAME_DEFINITIONS = (
     ("ORIENTATION", "Orientation Game", "MEMORY"),
     ("OBJECT_IDENTIFICATION", "Object Identification", "CONCENTRATION_ATTENTION"),
     ("OBJECT_MATCHING", "Object Matching", "CONCENTRATION_ATTENTION"),
+    ("PATTERN_RECALL", "Pattern Recall", "MEMORY"),
 )
 
 DEMO_ACCOUNTS = (

@@ -475,6 +475,34 @@ class PerformanceMetricDailyAggregationTests(unittest.TestCase):
         self.assertIsNotNone(dash_data["latest_performance"])
         self.assertEqual(float(dash_data["latest_performance"]["memory_score"]), 84.0)
 
+    def test_15_pattern_recall_contributes_to_memory_performance_aggregation(self):
+        """Verify that PATTERN_RECALL contributes to MEMORY score and updates games_completed."""
+        pattern_game = self.db.scalar(
+            select(Game).where(Game.code == "PATTERN_RECALL", Game.is_active.is_(True))
+        )
+        self.assertIsNotNone(pattern_game)
+        self.assertEqual(pattern_game.category, "MEMORY")
+
+        # Submit a pattern recall game result with Android telemetry fields
+        res = self._start_and_submit_game(
+            pattern_game.id,
+            accuracy=92.0,
+            response_time_ms=1200,
+            score=92.0,
+            difficulty_level=2,
+        )["result_response"]
+        self.assertEqual(res.status_code, 201)
+
+        metric = self.db.scalar(
+            select(PerformanceMetric).where(PerformanceMetric.patient_id == self.patient.id)
+        )
+        self.assertIsNotNone(metric)
+        self.assertEqual(metric.games_completed, 1)
+        self.assertEqual(metric.memory_score, Decimal("92.00"))
+        self.assertIsNone(metric.attention_score)
+        self.assertEqual(metric.average_accuracy, Decimal("92.00"))
+        self.assertEqual(metric.average_response_time_ms, 1200)
+
 
 if __name__ == "__main__":
     unittest.main()
