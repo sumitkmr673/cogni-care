@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
-const demoEmail = import.meta.env.VITE_DEMO_CAREGIVER_EMAIL || "demo.caregiver@cogni-care.example";
-const demoPassword = import.meta.env.VITE_DEMO_CAREGIVER_PASSWORD || "DemoCaregiverOnly-2026!";
-
 export default function LoginPage({ authenticated, onSignIn }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState(location.state?.prefillEmail || demoEmail);
-  const [password, setPassword] = useState(location.state?.prefillEmail ? "" : demoPassword);
+  const [email, setEmail] = useState(location.state?.prefillEmail || "");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -75,26 +72,9 @@ export default function LoginPage({ authenticated, onSignIn }) {
           </span>
         </div>
 
-        <section className="demo-access">
-          <span className="eyebrow">Demo access</span>
-          <p>Use the seeded development caregiver account for the SIH demonstration.</p>
-          <code>{demoEmail}</code>
-          <code>{demoPassword}</code>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => {
-              setEmail(demoEmail);
-              setPassword(demoPassword);
-            }}
-          >
-            Use demo account
-          </button>
-        </section>
         <Link className="home-link" to="/">
           ← Back to Home
         </Link>
-        <small className="auth-note">Development prototype · access is provided by the FastAPI backend.</small>
       </div>
     </div>
   );
