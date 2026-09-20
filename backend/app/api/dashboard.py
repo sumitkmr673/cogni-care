@@ -37,11 +37,13 @@ from app.schemas.dashboard import (
     ReminderItem,
     SessionResult,
 )
+from app.schemas.analysis import PatientAnalysisResponse
 from app.schemas.reminder import (
     ReminderCreateRequest,
     ReminderStatusUpdateRequest,
     ReminderUpdateRequest,
 )
+from app.services.analysis import analyze_patient_performance
 
 router = APIRouter(tags=["caregiver dashboard"])
 
@@ -425,6 +427,21 @@ def get_patient_trends(
         patient_id=patient_id,
         metrics=[PerformancePoint.model_validate(metric) for metric in metrics],
     )
+
+
+@router.get(
+    "/patients/{patient_id}/analysis",
+    response_model=PatientAnalysisResponse,
+    summary="Get rule-based performance analysis and observations for a patient",
+    description=CAREGIVER_ACCESS_DESCRIPTION,
+)
+def get_patient_analysis(
+    patient_id: UUID,
+    accessor: PatientAccessor = Depends(get_current_patient_accessor),
+    db: Session = Depends(get_db),
+) -> PatientAnalysisResponse:
+    get_accessible_patient_for_accessor(patient_id, accessor, db)
+    return analyze_patient_performance(db, patient_id)
 
 
 def _reminder_response(

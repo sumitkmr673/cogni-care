@@ -5,6 +5,7 @@ import {
   createPatient as apiCreatePatient,
   createPatientReminder,
   getCareTeam,
+  getPatientAnalysis,
   getPatientDashboard,
   getPatientReminders,
   getPatientSessions,
@@ -20,6 +21,7 @@ export default function useCaregiverData(patientId) {
   const [selectedId, setSelectedId] = useState(patientId || "");
   const [dashboard, setDashboard] = useState(null);
   const [performance, setPerformance] = useState([]);
+  const [analysis, setAnalysis] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [reminders, setReminders] = useState([]);
   const [careTeam, setCareTeam] = useState([]);
@@ -38,15 +40,17 @@ export default function useCaregiverData(patientId) {
       if (!nextId) {
         setDashboard(null);
         setPerformance([]);
+        setAnalysis(null);
         setSessions([]);
         setReminders([]);
         setCareTeam([]);
         setEmptyPatients(true);
         return;
       }
-      const [nextDashboard, nextTrends, nextSessions, nextReminders, nextCareTeam] = await Promise.all([
+      const [nextDashboard, nextTrends, nextAnalysis, nextSessions, nextReminders, nextCareTeam] = await Promise.all([
         getPatientDashboard(nextId),
         getPatientTrends(nextId),
+        getPatientAnalysis(nextId).catch(() => null),
         getPatientSessions(nextId, 50),
         getPatientReminders(nextId),
         getCareTeam(nextId).then((res) => res?.members || []).catch(() => []),
@@ -54,6 +58,7 @@ export default function useCaregiverData(patientId) {
       setEmptyPatients(false);
       setDashboard(nextDashboard);
       setPerformance(nextTrends.metrics);
+      setAnalysis(nextAnalysis);
       setSessions(nextSessions);
       setReminders(nextReminders);
       setCareTeam(nextCareTeam);
@@ -108,6 +113,7 @@ export default function useCaregiverData(patientId) {
     selectedId,
     dashboard,
     performance,
+    analysis,
     sessions,
     reminders,
     careTeam,

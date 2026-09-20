@@ -1,5 +1,10 @@
-import { Link, useOutletContext } from "react-router-dom";
-import { EmptyPatientsState, ErrorState, LoadingState, PageIntro, Reminders } from "../../components/caregiver/CaregiverWidgets";
+import { useOutletContext } from "react-router-dom";
+import {
+  EmptyPatientsState,
+  ErrorState,
+  LoadingState,
+  RemindersContent,
+} from "../../components/caregiver/CaregiverWidgets";
 
 export default function RemindersPage() {
   const data = useOutletContext();
@@ -7,25 +12,7 @@ export default function RemindersPage() {
   if (data.error) return <ErrorState message={data.error} onRetry={data.reload} />;
   if (data.emptyPatients || !data.dashboard) return <EmptyPatientsState />;
 
-  const isPrimary = Boolean(data.dashboard?.caregiver_relationship?.is_primary);
-  const currentCaregiverPublicId = data.dashboard?.caregiver_relationship?.public_id || "";
-
-  return (
-    <>
-      <PageIntro
-        eyebrow="Patient support"
-        title="Reminders"
-        patient={data.dashboard.patient}
-        action={<Link className="button secondary back-button" to={`/app/patients/${data.selectedId}`}>Back to overview</Link>}
-      />
-      <Reminders
-        reminders={data.reminders}
-        patientId={data.selectedId}
-        onCreated={data.reload}
-        isPrimary={isPrimary}
-        currentCaregiverPublicId={currentCaregiverPublicId}
-      />
-    </>
-  );
+  return <RemindersContent data={data} />;
 }
+
 

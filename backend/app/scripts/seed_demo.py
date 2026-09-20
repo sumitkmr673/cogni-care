@@ -167,8 +167,10 @@ CAREGIVER_ASSIGNMENTS = (
     ("demo.patient.assam@cogni-care.example", "demo.caregiver.community@cogni-care.example", False),
     ("demo.patient.sikkim@cogni-care.example", "demo.caregiver.northeast@cogni-care.example", True),
     ("demo.patient.sikkim@cogni-care.example", DEMO_SECONDARY_CAREGIVER_EMAIL, False),
+    ("demo.patient.sikkim@cogni-care.example", DEMO_CAREGIVER_EMAIL, False),
     ("demo.patient.mizoram@cogni-care.example", "demo.caregiver.community@cogni-care.example", True),
     ("demo.patient.mizoram@cogni-care.example", "demo.caregiver.northeast@cogni-care.example", False),
+    ("demo.patient.mizoram@cogni-care.example", DEMO_CAREGIVER_EMAIL, False),
     # Doctor caregiver assignments (secondary caregiver access)
     (DEMO_PATIENT_EMAIL, DEMO_DOCTOR_EMAIL, False),
     ("demo.patient.assam@cogni-care.example", DEMO_DOCTOR_EMAIL, False),
@@ -351,30 +353,46 @@ def _seed_activity(
                 )
             )
 
-        metric_age = 45 if patient_index == 3 else 0
         for index in range(10):
+            is_recent = index < 3
             if patient_index == 0:
-                memory = 68 + index * 2.2
-                attention = 64 + index * 2.5
+                # Meera Sharma: Positive improvement archetype
+                memory = 88.0 if is_recent else 76.0
+                attention = 86.0 if is_recent else 74.0
+                accuracy = 87.0 if is_recent else 75.0
+                response_time = 900 if is_recent else 1400
+                completed_count = 2
             elif patient_index == 1:
-                memory = 70 + ((index * 13) % 24)
-                attention = 66 + ((index * 17) % 28)
+                # Nabanita Das: Lower / attention needed archetype
+                memory = 67.0 if is_recent else 78.0
+                attention = 71.0 if is_recent else 80.0
+                accuracy = 69.0 if is_recent else 79.0
+                response_time = 1700 if is_recent else 1100
+                completed_count = 1 if index in (0, 1) else (0 if index == 2 else 2)
             elif patient_index == 2:
-                memory = 90 + (index % 4)
-                attention = 68 + index * 1.4
+                # Pema Bhutia: Consistent and stable performance archetype
+                memory = 85.5 if is_recent else 85.0
+                attention = 83.5 if is_recent else 83.0
+                accuracy = 84.5 if is_recent else 84.0
+                response_time = 930 if is_recent else 950
+                completed_count = 2
             else:
-                memory = 72 + index * 0.5
-                attention = 70 + index * 0.4
+                # Lalhmingliani Sailo: Variable / mixed cognitive pattern archetype
+                memory = 83.0 if is_recent else 72.0
+                attention = 70.0 if is_recent else 82.0
+                accuracy = 71.0 if is_recent else 77.0
+                response_time = 920 if is_recent else 1400
+                completed_count = 2
             db.add(
                 PerformanceMetric(
                     patient_id=patient.id,
-                    metric_date=today - timedelta(days=metric_age + index),
-                    memory_score=Decimal(str(round(min(memory, 98), 2))),
-                    attention_score=Decimal(str(round(min(attention, 98), 2))),
-                    average_accuracy=Decimal(str(round((memory + attention) / 2, 2))),
-                    average_response_time_ms=max(600, response_base - index * 15),
-                    games_completed=2,
-                    total_sessions=2,
+                    metric_date=today - timedelta(days=index),
+                    memory_score=Decimal(str(round(memory, 2))),
+                    attention_score=Decimal(str(round(attention, 2))),
+                    average_accuracy=Decimal(str(round(accuracy, 2))),
+                    average_response_time_ms=response_time,
+                    games_completed=completed_count,
+                    total_sessions=completed_count,
                 )
             )
 

@@ -90,6 +90,10 @@ export function getPatientTrends(patientId) {
   return request(`/patients/${patientId}/trends`);
 }
 
+export function getPatientAnalysis(patientId) {
+  return request(`/patients/${patientId}/analysis`);
+}
+
 export function getPatientSessions(patientId, limit = 50) {
   return request(`/patients/${patientId}/sessions?limit=${limit}`);
 }
