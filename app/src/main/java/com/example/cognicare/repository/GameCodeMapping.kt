@@ -3,17 +3,21 @@ package com.example.cognicare.repository
 import com.example.cognicare.data.model.GameType
 
 /**
- * The backend's catalog (cogni-care/backend/app/scripts/seed_demo.py, GAME_DEFINITIONS) has five
- * games; the app has six. PATTERN_RECALL has no backend counterpart, so its results are kept on
- * the device only — [RemoteCareRepository.recordGameCompletion] skips the network call for it
- * rather than mislabel it under an unrelated backend game.
+ * The backend's catalog (migrations a1b2c3d4e002 and seed_demo.py's GAME_DEFINITIONS) has one game
+ * for each of the app's six. Memory Match is the backend's OBJECT_MATCHING, and Object Naming its
+ * OBJECT_IDENTIFICATION.
+ *
+ * A [GameType] left out of this map would have its results kept on the device only —
+ * [RemoteCareRepository.recordGameCompletion] skips the network call rather than mislabel it under
+ * an unrelated backend game. Pattern Recall was such a game until the backend added PATTERN_RECALL.
  */
 private val gameTypeToBackendCode: Map<GameType, String> = mapOf(
     GameType.DAILY_RECALL to "DAILY_RECALL",
     GameType.FAMILY_IDENTIFICATION to "FAMILY_IDENTIFICATION",
     GameType.ORIENTATION to "ORIENTATION",
     GameType.OBJECT_NAMING to "OBJECT_IDENTIFICATION",
-    GameType.MEMORY_MATCH to "OBJECT_MATCHING"
+    GameType.MEMORY_MATCH to "OBJECT_MATCHING",
+    GameType.PATTERN_RECALL to "PATTERN_RECALL"
 )
 
 private val backendCodeToGameType: Map<String, GameType> =

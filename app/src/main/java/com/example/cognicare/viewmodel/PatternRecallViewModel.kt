@@ -4,11 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cognicare.core.game.MAX_GAME_LEVEL
 import com.example.cognicare.core.game.MIN_GAME_LEVEL
+import com.example.cognicare.core.game.patternRecallOutcome
 import com.example.cognicare.core.game.LevelResult
 import com.example.cognicare.core.game.levelResultAfter
 import com.example.cognicare.core.game.patternRecallLevel
 import com.example.cognicare.data.local.AppPreferences
-import com.example.cognicare.data.model.GameOutcome
 import com.example.cognicare.data.model.GameType
 import com.example.cognicare.repository.AuthRepository
 import com.example.cognicare.repository.CareRepository
@@ -231,9 +231,9 @@ class PatternRecallViewModel @Inject constructor(
         }
     }
 
-    // No app-side backend game code exists for Pattern Recall (see repository/GameCodeMapping.kt),
-    // so the network call no-ops there — but the level still advances locally, which is what the
-    // patient actually experiences.
+    // The level is saved on the device first: it is what the patient experiences, and it must not
+    // depend on the network. The result then goes to the backend's PATTERN_RECALL game (see
+    // repository/GameCodeMapping.kt), where it counts toward the caregiver's Memory score.
     private fun reportCompletionOnce() {
         if (hasReportedCompletion) return
         hasReportedCompletion = true
@@ -249,13 +249,12 @@ class PatternRecallViewModel @Inject constructor(
             val elapsedMs = System.currentTimeMillis() - startedAtMillis
             careRepository.recordGameCompletion(
                 GameType.PATTERN_RECALL,
-                GameOutcome(
-                    scorePercent = state.roundsCompleted * 100.0 / state.winRound,
-                    correctAnswers = state.roundsCompleted,
-                    totalQuestions = state.winRound,
-                    responseTimeMs = elapsedMs.toInt(),
-                    mistakes = state.totalMistakes,
-                    difficultyLevel = state.level
+                patternRecallOutcome(
+                    roundsCompleted = state.roundsCompleted,
+                    roundsNeeded = state.winRound,
+                    totalMistakes = state.totalMistakes,
+                    elapsedMs = elapsedMs,
+                    level = state.level
                 )
             )
         }
