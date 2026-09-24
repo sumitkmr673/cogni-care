@@ -31,14 +31,13 @@ import com.example.cognicare.viewmodel.DailyRecallViewModel
 /** Open "tell me about your day" reflection. Speaking is optional and nothing is marked right or wrong. */
 @Composable
 fun DailyRecallScreen(
-    languageLabel: String,
     onBack: () -> Unit,
     onComplete: () -> Unit,
     viewModel: DailyRecallViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    PatientScreen(languageLabel = languageLabel) {
+    PatientScreen(showHeader = false) {
         BackTextButton(onClick = onBack)
         Spacer(Modifier.height(8.dp))
         Eyebrow(stringResource(R.string.game_daily_recall))

@@ -10,14 +10,12 @@ import com.example.cognicare.viewmodel.ObjectNamingViewModel
 
 @Composable
 fun ObjectNamingScreen(
-    languageLabel: String,
     onBack: () -> Unit,
     onComplete: () -> Unit,
     viewModel: ObjectNamingViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     VoiceQuizScreen(
-        languageLabel = languageLabel,
         eyebrow = stringResource(R.string.game_object_naming),
         title = stringResource(R.string.object_naming_title),
         state = state,

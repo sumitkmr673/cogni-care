@@ -6,7 +6,9 @@ import com.example.cognicare.data.local.SecureCredentialStore
 import com.example.cognicare.data.model.AuthSession
 import com.example.cognicare.data.model.UserRole
 import com.example.cognicare.data.remote.CogniCareApi
+import com.example.cognicare.data.remote.dto.DeviceLoginRequestDto
 import com.example.cognicare.data.remote.dto.LoginRequestDto
+import com.example.cognicare.data.remote.dto.PatientRegisterRequestDto
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -18,16 +20,6 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Talks to cogni-care/backend/app/api/auth.py. The backend has only one login shape — email and
- * password, for every role — so the patient's "just say your name" flow is built on top of it:
- * [setupPatientDevice] does one real login and caches the password (encrypted); [signInPatient]
- * checks the spoken or typed name locally and reuses the cached password to re-establish the
- * backend session, so the patient never types an email or password on this device.
- *
- * The session is saved last in every flow: saving it is what switches the app to the signed-in
- * screens, which clears the sign-in ViewModel, so all other writes must already be done by then.
- */
 @Singleton
 class RemoteAuthRepository @Inject constructor(
     private val api: CogniCareApi,
@@ -44,6 +36,60 @@ class RemoteAuthRepository @Inject constructor(
         preferences.patientLockedOutAt
     ) { failedAttempts, lockedOutAt ->
         PatientUnlockStatus(failedAttempts, isLockedOut = lockedOutAt != null, lockedOutAt = lockedOutAt)
+    }
+
+    override suspend fun registerPatientDevice(
+        name: String,
+        dateOfBirth: String?,
+        gender: String?,
+        language: String?
+    ): AuthResult {
+        return try {
+            val clientDeviceId = credentialStore.getOrCreateClientDeviceId()
+            val response = api.registerPatient(
+                PatientRegisterRequestDto(
+                    display_name = name.trim(),
+                    date_of_birth = dateOfBirth,
+                    gender = gender,
+                    preferred_language = language,
+                    client_device_id = clientDeviceId
+                )
+            )
+            val session = AuthSession(
+                userId = response.patient_id,
+                displayName = response.display_name,
+                role = UserRole.PATIENT,
+                accessToken = response.token.access_token,
+                publicId = response.patient_public_id,
+                patientId = response.patient_id
+            )
+            withContext(NonCancellable) {
+                credentialStore.saveDeviceCredentials(
+                    deviceIdentifier = response.device_identifier,
+                    deviceKey = response.device_key,
+                    patientPublicId = response.patient_public_id
+                )
+                preferences.setPatientRegisteredName(response.display_name)
+                preferences.resetPatientNameAttempts()
+            }
+            AuthResult.Success(session)
+        } catch (error: HttpException) {
+            if (error.code() == 409) {
+                AuthResult.Failure(AuthFailure.DEVICE_ALREADY_BOUND)
+            } else if (error.code() == 401 || error.code() == 422) {
+                AuthResult.Failure(AuthFailure.INVALID_CREDENTIALS)
+            } else {
+                AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+            }
+        } catch (error: IOException) {
+            AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+        }
+    }
+
+    override suspend fun completePatientSession(session: AuthSession) {
+        withContext(NonCancellable) {
+            preferences.saveSession(session)
+        }
     }
 
     override suspend fun setupPatientDevice(email: String, password: String): AuthResult {
@@ -63,7 +109,6 @@ class RemoteAuthRepository @Inject constructor(
         if (preferences.patientLockedOutAt.first() != null) return AuthResult.Failure(AuthFailure.LOCKED_OUT)
         val registeredName = preferences.patientRegisteredName.first()
             ?: return AuthResult.Failure(AuthFailure.NOT_SET_UP)
-        val credentials = credentialStore.read() ?: return AuthResult.Failure(AuthFailure.NOT_SET_UP)
 
         if (!patientNameMatches(spokenOrTypedName, registeredName)) {
             val attempts = withContext(NonCancellable) {
@@ -73,6 +118,21 @@ class RemoteAuthRepository @Inject constructor(
             return AuthResult.Failure(reason)
         }
 
+        // 1. Try passwordless device authentication if device credentials exist
+        val deviceCreds = credentialStore.readDeviceCredentials()
+        if (deviceCreds != null) {
+            val result = authenticateDevice(deviceCreds.deviceIdentifier, deviceCreds.deviceKey, deviceCreds.patientPublicId)
+            if (result is AuthResult.Success) {
+                withContext(NonCancellable) {
+                    preferences.resetPatientNameAttempts()
+                    preferences.saveSession(result.session)
+                }
+            }
+            return result
+        }
+
+        // 2. Fallback to cached email/password credentials for legacy setups
+        val credentials = credentialStore.read() ?: return AuthResult.Failure(AuthFailure.NOT_SET_UP)
         val result = authenticate(credentials.email, credentials.password, expectedRole = UserRole.PATIENT)
         if (result is AuthResult.Success) {
             withContext(NonCancellable) {
@@ -84,7 +144,7 @@ class RemoteAuthRepository @Inject constructor(
     }
 
     override suspend fun signInCaregiver(email: String, password: String): AuthResult {
-        val result = authenticate(email, password, expectedRole = UserRole.DOCTOR)
+        val result = authenticate(email, password, expectedRole = UserRole.CAREGIVER)
         if (result is AuthResult.Success) {
             withContext(NonCancellable) {
                 credentialStore.save(email.trim(), password)
@@ -100,20 +160,27 @@ class RemoteAuthRepository @Inject constructor(
         preferences.clearPatientDevice()
     }
 
-    /**
-     * Logs in and confirms the account's real role, name and id via /auth/me, passing the new token
-     * explicitly. Nothing is saved here — see the class comment for why callers save afterwards.
-     */
-    private suspend fun authenticate(email: String, password: String, expectedRole: UserRole): AuthResult =
+    private suspend fun authenticateDevice(
+        deviceIdentifier: String,
+        deviceKey: String,
+        patientPublicId: String?
+    ): AuthResult =
         try {
-            val token = api.login(LoginRequestDto(email.trim(), password)).access_token
+            val token = api.deviceLogin(DeviceLoginRequestDto(deviceIdentifier, deviceKey)).access_token
             val me = api.currentUser("Bearer $token")
             val role = backendRoleToAppRole(me.role)
-            if (role != expectedRole) {
+            if (role != UserRole.PATIENT) {
                 AuthResult.Failure(AuthFailure.INVALID_CREDENTIALS)
             } else {
                 AuthResult.Success(
-                    AuthSession(userId = me.id, displayName = me.display_name, role = role, accessToken = token)
+                    AuthSession(
+                        userId = me.id,
+                        displayName = me.display_name,
+                        role = role,
+                        accessToken = token,
+                        publicId = me.public_id ?: patientPublicId,
+                        patientId = me.patient_id
+                    )
                 )
             }
         } catch (error: HttpException) {
@@ -126,7 +193,39 @@ class RemoteAuthRepository @Inject constructor(
             AuthResult.Failure(AuthFailure.NETWORK_ERROR)
         }
 
-    /** The backend has CAREGIVER and DOCTOR as separate roles; the app treats both as the one "caregiver" side. */
+    /**
+     * Logs in and confirms the account's real role, name and id via /auth/me, passing the new token
+     * explicitly.
+     */
+    private suspend fun authenticate(email: String, password: String, expectedRole: UserRole): AuthResult =
+        try {
+            val token = api.login(LoginRequestDto(email.trim(), password)).access_token
+            val me = api.currentUser("Bearer $token")
+            val role = backendRoleToAppRole(me.role)
+            if (role != expectedRole) {
+                AuthResult.Failure(AuthFailure.INVALID_CREDENTIALS)
+            } else {
+                AuthResult.Success(
+                    AuthSession(
+                        userId = me.id,
+                        displayName = me.display_name,
+                        role = role,
+                        accessToken = token,
+                        publicId = me.public_id,
+                        patientId = me.patient_id
+                    )
+                )
+            }
+        } catch (error: HttpException) {
+            if (error.code() == 401 || error.code() == 422) {
+                AuthResult.Failure(AuthFailure.INVALID_CREDENTIALS)
+            } else {
+                AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+            }
+        } catch (error: IOException) {
+            AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+        }
+
     private fun backendRoleToAppRole(backendRole: String): UserRole =
-        if (backendRole == "PATIENT") UserRole.PATIENT else UserRole.DOCTOR
+        if (backendRole == "PATIENT") UserRole.PATIENT else UserRole.CAREGIVER
 }

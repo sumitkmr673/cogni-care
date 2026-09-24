@@ -1,15 +1,21 @@
 package com.example.cognicare.ui.screens.onboarding
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.VolunteerActivism
@@ -17,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,55 +40,55 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
-import com.example.cognicare.data.demo.DemoData
-import com.example.cognicare.repository.MAX_PATIENT_NAME_ATTEMPTS
-import com.example.cognicare.ui.components.BackTextButton
-import com.example.cognicare.ui.components.DemoNote
-import com.example.cognicare.ui.components.Eyebrow
+import com.example.cognicare.ui.components.BrandLockup
 import com.example.cognicare.ui.components.IconCircle
 import com.example.cognicare.ui.components.LeadText
-import com.example.cognicare.ui.components.ONBOARDING_STEP_COUNT
 import com.example.cognicare.ui.components.PatientPrimaryButton
-import com.example.cognicare.ui.components.PatientScreen
 import com.example.cognicare.ui.components.ScreenTitle
-import com.example.cognicare.ui.components.StepProgress
-import com.example.cognicare.ui.components.SubtleTextLink
+import com.example.cognicare.ui.components.TextLinkButton
 import com.example.cognicare.ui.components.VoiceAnswerCapture
-import com.example.cognicare.ui.components.onboardingStepLabels
 import com.example.cognicare.ui.theme.PatientTheme
 import com.example.cognicare.viewmodel.PatientLoginUiState
 import com.example.cognicare.viewmodel.PatientLoginViewModel
 
-/** Everyday patient sign-in: say your name with the big speak button, or type it. */
+/** Native everyday patient sign-in: say your name or type it. */
 @Composable
 fun PatientLoginScreen(
-    languageLabel: String?,
     onBack: () -> Unit,
     onSetUpDeviceAgain: () -> Unit,
     viewModel: PatientLoginViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    PatientScreen(languageLabel = languageLabel) {
-        StepProgress(steps = onboardingStepLabels(), currentIndex = 3)
-        Spacer(Modifier.height(28.dp))
-        Eyebrow(stringResource(R.string.step_eyebrow, 4, ONBOARDING_STEP_COUNT, stringResource(R.string.step_sign_in)))
-        Spacer(Modifier.height(8.dp))
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .systemBarsPadding()
+                .padding(horizontal = 24.dp, vertical = 20.dp)
+        ) {
+            Spacer(Modifier.height(12.dp))
+            BrandLockup(tagline = stringResource(R.string.brand_tagline_patient))
+            Spacer(Modifier.height(28.dp))
 
-        if (state.isLockedOut) {
-            LockedOutContent(onSetUpDeviceAgain = onSetUpDeviceAgain)
-        } else {
-            NameEntryContent(
-                state = state,
-                onSpeechResult = viewModel::onSpeechResult,
-                onTypedNameChange = viewModel::onTypedNameChange,
-                onSubmitTypedName = viewModel::submitTypedName,
-                onSetUpDeviceAgain = onSetUpDeviceAgain
-            )
+            if (state.isLockedOut) {
+                LockedOutContent(onSetUpDeviceAgain = onSetUpDeviceAgain)
+            } else {
+                NameEntryContent(
+                    state = state,
+                    onSpeechResult = viewModel::onSpeechResult,
+                    onTypedNameChange = viewModel::onTypedNameChange,
+                    onSubmitTypedName = viewModel::submitTypedName,
+                    onSetUpDeviceAgain = onSetUpDeviceAgain
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
-
-        Spacer(Modifier.height(12.dp))
-        BackTextButton(onClick = onBack, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -109,7 +116,9 @@ private fun ColumnScope.NameEntryContent(
     }
 
     Box(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp),
         contentAlignment = Alignment.Center
     ) {
         val error = state.error
@@ -119,7 +128,7 @@ private fun ColumnScope.NameEntryContent(
                 text = stringResource(error.toMessageRes()),
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 style = MaterialTheme.typography.bodyLarge,
-                color = PatientTheme.colors.accentText,
+                color = MaterialTheme.colorScheme.error,
                 textAlign = TextAlign.Center
             )
         }
@@ -140,10 +149,10 @@ private fun ColumnScope.NameEntryContent(
         singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onSubmitTypedName() }),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         textStyle = MaterialTheme.typography.titleLarge
     )
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(20.dp))
     PatientPrimaryButton(
         text = stringResource(R.string.action_continue),
         onClick = onSubmitTypedName,
@@ -151,37 +160,26 @@ private fun ColumnScope.NameEntryContent(
         isLoading = state.isVerifying
     )
 
-    Spacer(Modifier.height(24.dp))
-    DemoNote(stringResource(R.string.patient_login_demo_note, DemoData.PATIENT_NAME))
-    Spacer(Modifier.height(12.dp))
-    LeadText(stringResource(R.string.patient_login_help))
-    Spacer(Modifier.height(8.dp))
-    SubtleTextLink(
+    Spacer(Modifier.height(28.dp))
+    TextLinkButton(
         text = stringResource(R.string.patient_login_setup_again),
         onClick = onSetUpDeviceAgain,
-        modifier = Modifier.align(Alignment.CenterHorizontally)
+        modifier = Modifier.fillMaxWidth()
     )
 }
 
-/**
- * Shown after [MAX_PATIENT_NAME_ATTEMPTS] unrecognised names. There is no alerts channel to the
- * caregiver yet (no backend endpoint and no push notifications), so the lock is recorded on the
- * device and the patient is asked to fetch their caregiver or doctor in person.
- */
 @Composable
 private fun ColumnScope.LockedOutContent(onSetUpDeviceAgain: () -> Unit) {
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(16.dp))
     IconCircle(Icons.Rounded.VolunteerActivism, size = 88.dp)
-    Spacer(Modifier.height(20.dp))
-    ScreenTitle(stringResource(R.string.patient_login_locked_title))
-    Spacer(Modifier.height(8.dp))
-    LeadText(stringResource(R.string.patient_login_locked_body))
     Spacer(Modifier.height(24.dp))
-    DemoNote(stringResource(R.string.patient_login_locked_caregiver_note, MAX_PATIENT_NAME_ATTEMPTS))
-    Spacer(Modifier.height(12.dp))
-    SubtleTextLink(
+    ScreenTitle(stringResource(R.string.patient_login_locked_title))
+    Spacer(Modifier.height(10.dp))
+    LeadText(stringResource(R.string.patient_login_locked_body))
+    Spacer(Modifier.height(32.dp))
+    PatientPrimaryButton(
         text = stringResource(R.string.patient_login_setup_again),
         onClick = onSetUpDeviceAgain,
-        modifier = Modifier.align(Alignment.CenterHorizontally)
+        showArrow = true
     )
 }

@@ -38,7 +38,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -54,32 +53,17 @@ import com.example.cognicare.R
 import com.example.cognicare.viewmodel.AssistantNavigation
 import com.example.cognicare.viewmodel.VoiceAssistantViewModel
 
-/**
- * Lower-middle of the screen: reachable with either thumb on any phone size, without the stretch
- * to a corner, and low enough that page headings and the main card stay visible above it.
- */
-private val ExpandedAssistantAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = 0.62f)
+/** Docked at bottom-end with system padding so it never obscures cards or center content. */
+private val ExpandedAssistantInset = 110.dp
 
-/** Room [PatientScreen] leaves at the bottom so its last content can scroll above the button. */
-private val ExpandedAssistantInset = 190.dp
-
-/** Same idea during a game: larger boards (up to 18 cards) can scroll clear of the small robot. */
+/** Same idea during a game: larger boards can scroll clear of the small robot. */
 private val CollapsedAssistantInset = 96.dp
 
 /**
  * Mounted once around the patient NavHost, so it sits above the home screen, the games hub, the
  * games and the completion screen alike.
  *
- * Two states:
- * - **Expanded** (everywhere except a running game): the robot speak button floats in the
- *   lower-middle of the screen.
- * - **Collapsed** (while [isInGame]): it shrinks to a small robot button at the bottom right. Game
- *   boards own the centre of the screen — the Memory Match grid, the Pattern Recall pads and the
- *   talking games' own microphone all live there — so a centred button would sit on the very
- *   thing being tapped. Tapping the small robot opens the assistant as a panel; nothing listens
- *   until the patient asks, so it never competes with a game's own microphone.
- *
- * Suggestion dialogs that fire during a game wait until the game ends rather than interrupt it.
+ * Placed predictably at the bottom-right corner clear of center cards, headings, and primary action buttons.
  */
 @Composable
 fun VoiceAssistantOverlay(
@@ -116,12 +100,13 @@ fun VoiceAssistantOverlay(
             ExpandedAssistant(
                 messageRes = state.assistantMessageRes,
                 onSpeech = viewModel::onAssistantSpeech,
-                modifier = Modifier.align(ExpandedAssistantAlignment)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .systemBarsPadding()
+                    .padding(end = 20.dp, bottom = 20.dp)
             )
         } else {
-            // Bottom-right, not mid-right: the Memory Match grid and Pattern Recall pads span the
-            // full width, so halfway down the right edge sits on top of cards. Below the board
-            // is the one place every game leaves empty.
+            // Bottom-right below the game board
             CollapsedAssistant(
                 onClick = { panelOpen = true },
                 modifier = Modifier
@@ -169,14 +154,14 @@ private fun ExpandedAssistant(
     val status = speechStatusText(controller)
     val bubble = messageRes?.let { stringResource(it) } ?: status
 
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.End) {
         AnimatedVisibility(visible = bubble != null, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
             AssistantBubble(bubble.orEmpty())
         }
         SpeakButton(
             isListening = controller.isListening,
             onClick = capture.onSpeakClick,
-            size = 124.dp,
+            size = 68.dp,
             idleIcon = Icons.Rounded.SmartToy
         )
     }

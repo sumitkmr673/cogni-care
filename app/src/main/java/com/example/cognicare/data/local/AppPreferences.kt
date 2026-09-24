@@ -50,7 +50,9 @@ class AppPreferences @Inject constructor(
             accessToken = prefs[Keys.ACCESS_TOKEN].orEmpty(),
             linkedPatientIds = prefs[Keys.LINKED_PATIENT_IDS].orEmpty()
                 .split(',')
-                .filter { it.isNotBlank() }
+                .filter { it.isNotBlank() },
+            publicId = prefs[Keys.PUBLIC_ID],
+            patientId = prefs[Keys.PATIENT_ID]
         )
     }.distinctUntilChanged()
 
@@ -78,6 +80,8 @@ class AppPreferences @Inject constructor(
             prefs[Keys.ROLE] = session.role.name
             prefs[Keys.ACCESS_TOKEN] = session.accessToken
             prefs[Keys.LINKED_PATIENT_IDS] = session.linkedPatientIds.joinToString(",")
+            session.publicId?.let { prefs[Keys.PUBLIC_ID] = it } ?: prefs.remove(Keys.PUBLIC_ID)
+            session.patientId?.let { prefs[Keys.PATIENT_ID] = it } ?: prefs.remove(Keys.PATIENT_ID)
         }
     }
 
@@ -89,6 +93,8 @@ class AppPreferences @Inject constructor(
             prefs.remove(Keys.ACCESS_TOKEN)
             prefs.remove(Keys.LINKED_PATIENT_IDS)
             prefs.remove(Keys.SELECTED_PATIENT_ID)
+            prefs.remove(Keys.PUBLIC_ID)
+            prefs.remove(Keys.PATIENT_ID)
         }
     }
 
@@ -106,6 +112,21 @@ class AppPreferences @Inject constructor(
 
     suspend fun setPatientRegisteredName(name: String) {
         context.dataStore.edit { it[Keys.PATIENT_REGISTERED_NAME] = name }
+    }
+
+    val patientDob: Flow<String?> = data.map { it[Keys.PATIENT_DOB] }.distinctUntilChanged()
+    val patientGender: Flow<String?> = data.map { it[Keys.PATIENT_GENDER] }.distinctUntilChanged()
+
+    suspend fun setPatientDob(dob: String?) {
+        context.dataStore.edit {
+            if (dob != null) it[Keys.PATIENT_DOB] = dob else it.remove(Keys.PATIENT_DOB)
+        }
+    }
+
+    suspend fun setPatientGender(gender: String?) {
+        context.dataStore.edit {
+            if (gender != null) it[Keys.PATIENT_GENDER] = gender else it.remove(Keys.PATIENT_GENDER)
+        }
     }
 
     /** Adds one wrong-name attempt and returns the new total, locking the device once it reaches [lockAt]. */
@@ -133,6 +154,8 @@ class AppPreferences @Inject constructor(
             prefs.remove(Keys.PATIENT_REGISTERED_NAME)
             prefs.remove(Keys.PATIENT_FAILED_NAME_ATTEMPTS)
             prefs.remove(Keys.PATIENT_LOCKED_OUT_AT)
+            prefs.remove(Keys.PATIENT_DOB)
+            prefs.remove(Keys.PATIENT_GENDER)
         }
     }
 
@@ -169,10 +192,14 @@ class AppPreferences @Inject constructor(
         val ROLE = stringPreferencesKey("session_role")
         val ACCESS_TOKEN = stringPreferencesKey("session_access_token")
         val LINKED_PATIENT_IDS = stringPreferencesKey("session_linked_patient_ids")
+        val PUBLIC_ID = stringPreferencesKey("session_public_id")
+        val PATIENT_ID = stringPreferencesKey("session_patient_id")
         val LANGUAGE_TAG = stringPreferencesKey("language_tag")
         val CONSENT_ACCEPTED = booleanPreferencesKey("consent_accepted")
         val SELECTED_PATIENT_ID = stringPreferencesKey("selected_patient_id")
         val PATIENT_REGISTERED_NAME = stringPreferencesKey("patient_registered_name")
+        val PATIENT_DOB = stringPreferencesKey("patient_dob")
+        val PATIENT_GENDER = stringPreferencesKey("patient_gender")
         val PATIENT_FAILED_NAME_ATTEMPTS = intPreferencesKey("patient_failed_name_attempts")
         val PATIENT_LOCKED_OUT_AT = longPreferencesKey("patient_locked_out_at")
         val API_BASE_URL_OVERRIDE = stringPreferencesKey("api_base_url_override")

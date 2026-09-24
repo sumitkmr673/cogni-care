@@ -22,10 +22,26 @@ interface AuthRepository {
     val patientUnlockStatus: Flow<PatientUnlockStatus>
 
     /**
-     * First-time setup for a patient's device, usually done by a caregiver: a real login against
-     * the backend with the patient's own email and password. The password is never asked for again
-     * on this device; from then on the patient signs in by saying or typing their name
-     * ([signInPatient]). A successful setup also clears any earlier lockout.
+     * Option B: Simple self-registration and device binding initiated directly from the Android app.
+     * The patient enters their name; the app binds this installation via [PatientDevice] and stores
+     * the backend credentials securely. No email or password is required from the patient.
+     */
+    suspend fun registerPatientDevice(
+        name: String,
+        dateOfBirth: String? = null,
+        gender: String? = null,
+        language: String? = null
+    ): AuthResult
+
+    /**
+     * Activates and saves the patient session in local preferences after the patient
+     * has reviewed their newly generated public ID on the success screen.
+     */
+    suspend fun completePatientSession(session: AuthSession)
+
+    /**
+     * First-time setup for a patient's device with existing account credentials (e.g. demo or caregiver-managed):
+     * authenticates against the backend, binds or saves credentials, and enables passwordless name-based sign-in.
      */
     suspend fun setupPatientDevice(email: String, password: String): AuthResult
 
@@ -46,4 +62,11 @@ sealed interface AuthResult {
     data class Failure(val reason: AuthFailure) : AuthResult
 }
 
-enum class AuthFailure { NAME_NOT_RECOGNIZED, LOCKED_OUT, INVALID_CREDENTIALS, NETWORK_ERROR, NOT_SET_UP }
+enum class AuthFailure {
+    NAME_NOT_RECOGNIZED,
+    LOCKED_OUT,
+    INVALID_CREDENTIALS,
+    NETWORK_ERROR,
+    NOT_SET_UP,
+    DEVICE_ALREADY_BOUND
+}

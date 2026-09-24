@@ -542,6 +542,88 @@ class ReminderManagementTests(unittest.TestCase):
         self.assertTrue(updated["is_recurring"])
         self.assertEqual(updated["recurrence_rule"], "FREQ=DAILY;INTERVAL=1")
 
+    # U. Patient can read their own reminders -> succeeds (200)
+    def test_u_patient_can_read_own_reminders(self):
+        from app.security import create_access_token
+        patient = self.db.scalar(select(Patient).where(Patient.id == DEMO_PATIENT_ID))
+        self.assertIsNotNone(patient)
+        patient_token = create_access_token(patient.user_id)
+
+        res = self.client.get(
+            f"/patients/{DEMO_PATIENT_ID}/reminders",
+            headers=self._auth_header(patient_token),
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIsInstance(data, list)
+        self.assertGreater(len(data), 0)
+
+    # V. Patient cannot read another patient's reminders -> 404
+    def test_v_patient_cannot_read_other_patient_reminders(self):
+        from app.security import create_access_token
+        patient = self.db.scalar(select(Patient).where(Patient.id == DEMO_PATIENT_ID))
+        patient_token = create_access_token(patient.user_id)
+
+        res = self.client.get(
+            f"/patients/{OTHER_DEMO_PATIENT_ID}/reminders",
+            headers=self._auth_header(patient_token),
+        )
+        self.assertEqual(res.status_code, 404)
+
+    # W. Patient cannot create reminders -> 403 Forbidden
+    def test_w_patient_cannot_create_reminder(self):
+        from app.security import create_access_token
+        patient = self.db.scalar(select(Patient).where(Patient.id == DEMO_PATIENT_ID))
+        patient_token = create_access_token(patient.user_id)
+
+        payload = self._sample_reminder_payload("Patient Trying To Create")
+        res = self.client.post(
+            f"/patients/{DEMO_PATIENT_ID}/reminders",
+            json=payload,
+            headers=self._auth_header(patient_token),
+        )
+        self.assertEqual(res.status_code, 403)
+        self.assertIn("Caregiver access required", res.json()["detail"])
+
+    # X. Patient cannot edit, delete, or toggle reminders -> 403 Forbidden
+    def test_x_patient_cannot_edit_or_delete_or_toggle_reminder(self):
+        from app.security import create_access_token
+        # First caregiver creates a reminder
+        payload = self._sample_reminder_payload("Caregiver Reminder For Toggle Test")
+        create_res = self.client.post(
+            f"/patients/{DEMO_PATIENT_ID}/reminders",
+            json=payload,
+            headers=self._auth_header(self.primary_token),
+        )
+        self.assertEqual(create_res.status_code, 201)
+        reminder_id = create_res.json()["id"]
+
+        patient = self.db.scalar(select(Patient).where(Patient.id == DEMO_PATIENT_ID))
+        patient_token = create_access_token(patient.user_id)
+
+        # PATCH edit
+        patch_res = self.client.patch(
+            f"/patients/{DEMO_PATIENT_ID}/reminders/{reminder_id}",
+            json={"title": "Hacked Title"},
+            headers=self._auth_header(patient_token),
+        )
+        self.assertEqual(patch_res.status_code, 403)
+
+        # PATCH toggle status
+        toggle_res = self.client.patch(
+            f"/patients/{DEMO_PATIENT_ID}/reminders/{reminder_id}/status",
+            json={"is_active": False},
+            headers=self._auth_header(patient_token),
+        )
+        self.assertEqual(toggle_res.status_code, 403)
+
+        # DELETE
+        del_res = self.client.delete(
+            f"/patients/{DEMO_PATIENT_ID}/reminders/{reminder_id}",
+            headers=self._auth_header(patient_token),
+        )
+        self.assertEqual(del_res.status_code, 403)
+
 
 if __name__ == "__main__":
     unittest.main()

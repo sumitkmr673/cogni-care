@@ -121,5 +121,5 @@ val SyncStatus.tone: Tone
 val UserRole.labelRes: Int
     get() = when (this) {
         UserRole.PATIENT -> R.string.role_patient
-        UserRole.DOCTOR -> R.string.role_doctor_caregiver
+        UserRole.CAREGIVER -> R.string.role_doctor_caregiver
     }

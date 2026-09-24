@@ -60,7 +60,6 @@ import com.example.cognicare.viewmodel.VoiceQuizUiState
 /** Shared layout for the voice games: picture, question, big speak button, tap answers. */
 @Composable
 fun VoiceQuizScreen(
-    languageLabel: String,
     eyebrow: String,
     title: String,
     state: VoiceQuizUiState,
@@ -75,7 +74,7 @@ fun VoiceQuizScreen(
     }
     val question = state.currentQuestion ?: return
 
-    PatientScreen(languageLabel = languageLabel) {
+    PatientScreen(showHeader = false) {
         BackTextButton(onClick = onBack)
         Spacer(Modifier.height(8.dp))
         Eyebrow(eyebrow)

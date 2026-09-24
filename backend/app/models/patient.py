@@ -12,6 +12,7 @@ from app.identifiers import generate_patient_public_id
 if TYPE_CHECKING:
     from app.models.caregiver import Caregiver
     from app.models.game_session import GameSession
+    from app.models.patient_device import PatientDevice
     from app.models.performance_metric import PerformanceMetric
     from app.models.reminder import Reminder
     from app.models.user import User
@@ -62,4 +63,7 @@ class Patient(Base):
     )
     reminders: Mapped[list["Reminder"]] = relationship(
         back_populates="patient", cascade="save-update, merge"
+    )
+    devices: Mapped[list["PatientDevice"]] = relationship(
+        back_populates="patient", cascade="all, delete-orphan"
     )

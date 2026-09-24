@@ -14,8 +14,8 @@ class RoleGuardTest {
     }
 
     @Test
-    fun doctorOnlyReachesCaregiverArea() {
-        assertTrue(UserRole.DOCTOR.canAccess(AppArea.CAREGIVER))
-        assertFalse(UserRole.DOCTOR.canAccess(AppArea.PATIENT))
+    fun caregiverOnlyReachesCaregiverArea() {
+        assertTrue(UserRole.CAREGIVER.canAccess(AppArea.CAREGIVER))
+        assertFalse(UserRole.CAREGIVER.canAccess(AppArea.PATIENT))
     }
 }

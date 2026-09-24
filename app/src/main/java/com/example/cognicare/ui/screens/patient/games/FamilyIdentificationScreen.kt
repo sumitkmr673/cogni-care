@@ -10,14 +10,12 @@ import com.example.cognicare.viewmodel.FamilyIdentificationViewModel
 
 @Composable
 fun FamilyIdentificationScreen(
-    languageLabel: String,
     onBack: () -> Unit,
     onComplete: () -> Unit,
     viewModel: FamilyIdentificationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     VoiceQuizScreen(
-        languageLabel = languageLabel,
         eyebrow = stringResource(R.string.game_family_identification),
         title = stringResource(R.string.family_title),
         state = state,

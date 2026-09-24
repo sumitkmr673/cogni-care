@@ -1,5 +1,6 @@
 package com.example.cognicare.ui.screens.patient
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,17 +25,17 @@ import com.example.cognicare.ui.components.ScreenTitle
  */
 @Composable
 fun GameCompleteScreen(
-    languageLabel: String,
     onBackToGames: () -> Unit
 ) {
-    PatientScreen(languageLabel = languageLabel) {
+    PatientScreen(showHeader = false) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.height(32.dp))
             IconCircle(Icons.Rounded.Celebration, size = 96.dp)
-            androidx.compose.foundation.layout.Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
             ScreenTitle(stringResource(R.string.game_complete_title), textAlign = TextAlign.Center)
-            androidx.compose.foundation.layout.Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
             LeadText(stringResource(R.string.game_complete_body), textAlign = TextAlign.Center)
-            androidx.compose.foundation.layout.Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(32.dp))
             PatientPrimaryButton(
                 text = stringResource(R.string.game_back_to_games),
                 onClick = onBackToGames,

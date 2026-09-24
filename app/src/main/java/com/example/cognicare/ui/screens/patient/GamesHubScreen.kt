@@ -13,30 +13,25 @@ import androidx.compose.ui.unit.dp
 import com.example.cognicare.R
 import com.example.cognicare.data.model.GameType
 import com.example.cognicare.ui.components.BackTextButton
-import com.example.cognicare.ui.components.Eyebrow
 import com.example.cognicare.ui.components.GameOptionCard
 import com.example.cognicare.ui.components.LeadText
 import com.example.cognicare.ui.components.PatientScreen
 import com.example.cognicare.ui.components.ScreenTitle
-import com.example.cognicare.ui.components.descriptionRes
 import com.example.cognicare.ui.components.icon
 import com.example.cognicare.ui.components.titleRes
 
 @Composable
 fun GamesHubScreen(
-    languageLabel: String,
     onBack: () -> Unit,
     onOpenGame: (GameType) -> Unit
 ) {
-    PatientScreen(languageLabel = languageLabel) {
+    PatientScreen(showHeader = false) {
         BackTextButton(onClick = onBack)
-        Spacer(Modifier.height(12.dp))
-        Eyebrow(stringResource(R.string.games_eyebrow))
         Spacer(Modifier.height(8.dp))
         ScreenTitle(stringResource(R.string.games_title))
         Spacer(Modifier.height(8.dp))
         LeadText(stringResource(R.string.games_lead))
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val chunkedGames = GameType.entries.chunked(2)
             chunkedGames.forEach { rowGames ->
@@ -47,7 +42,6 @@ fun GamesHubScreen(
                     rowGames.forEach { game ->
                         GameOptionCard(
                             title = stringResource(game.titleRes),
-                            subtitle = stringResource(game.descriptionRes),
                             icon = game.icon,
                             onClick = { onOpenGame(game) },
                             modifier = Modifier.weight(1f)
