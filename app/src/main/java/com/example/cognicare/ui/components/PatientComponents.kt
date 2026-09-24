@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.Badge
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -92,6 +93,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cognicare.R
 import com.example.cognicare.ui.theme.PatientTheme
+import com.example.cognicare.ui.theme.Rose50
 
 const val ONBOARDING_STEP_COUNT = 4
 
@@ -111,10 +113,12 @@ fun LargeChoiceButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    highlighted: Boolean = false
+    highlighted: Boolean = false,
+    isError: Boolean = false
 ) {
     val colors = PatientTheme.colors
     val primary = MaterialTheme.colorScheme.primary
+    val error = MaterialTheme.colorScheme.error
     Surface(
         onClick = onClick,
         enabled = enabled,
@@ -122,9 +126,20 @@ fun LargeChoiceButton(
             .fillMaxWidth()
             .heightIn(min = PatientTheme.dimens.primaryAction),
         shape = RoundedCornerShape(16.dp),
-        color = if (highlighted) colors.selectedContainer else MaterialTheme.colorScheme.surface,
+        color = when {
+            isError -> Rose50
+            highlighted -> colors.selectedContainer
+            else -> MaterialTheme.colorScheme.surface
+        },
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(if (highlighted) 2.dp else 1.5.dp, if (highlighted) primary else colors.cardBorder)
+        border = BorderStroke(
+            if (highlighted || isError) 2.dp else 1.5.dp,
+            when {
+                isError -> error
+                highlighted -> primary
+                else -> colors.cardBorder
+            }
+        )
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
@@ -133,6 +148,8 @@ fun LargeChoiceButton(
             Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
             if (highlighted) {
                 Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = primary, modifier = Modifier.size(30.dp))
+            } else if (isError) {
+                Icon(Icons.Rounded.Cancel, contentDescription = null, tint = error, modifier = Modifier.size(30.dp))
             }
         }
     }

@@ -50,6 +50,8 @@ data class VoiceQuizUiState(
     val questionIndex: Int = 0,
     /** Only set for spoken answers, so the patient can see what was heard. */
     val heardAnswer: String? = null,
+    /** The option the patient tapped, right or wrong; null for a spoken answer. */
+    val selectedOption: String? = null,
     val feedback: AnswerFeedback = AnswerFeedback.NONE,
     val correctCount: Int = 0,
     val isComplete: Boolean = false
@@ -73,6 +75,7 @@ class VoiceQuizEngine(questions: List<VoiceQuizQuestion>) {
         val correct = isAccepted(answer, question.acceptedAnswers)
         _state.value = current.copy(
             heardAnswer = answer.trim().takeIf { fromSpeech },
+            selectedOption = answer.takeIf { !fromSpeech },
             feedback = if (correct) AnswerFeedback.CORRECT else AnswerFeedback.INCORRECT,
             correctCount = current.correctCount + if (correct) 1 else 0
         )
@@ -85,7 +88,12 @@ class VoiceQuizEngine(questions: List<VoiceQuizQuestion>) {
         _state.value = if (next >= current.questions.size) {
             current.copy(isComplete = true)
         } else {
-            current.copy(questionIndex = next, heardAnswer = null, feedback = AnswerFeedback.NONE)
+            current.copy(
+                questionIndex = next,
+                heardAnswer = null,
+                selectedOption = null,
+                feedback = AnswerFeedback.NONE
+            )
         }
     }
 

@@ -16,7 +16,8 @@ private val namingObjects = listOf(
     NamedObject("⌚", R.string.object_watch, listOf("wristwatch")),
     NamedObject("✏️", R.string.object_pencil),
     NamedObject("🍎", R.string.object_apple),
-    NamedObject("🔑", R.string.object_key, listOf("keys")),
+    // "chabi"/"chaabi" is the common Hindi/Urdu romanization for "key".
+    NamedObject("🔑", R.string.object_key, listOf("keys", "chabi", "chaabi")),
     NamedObject("🐶", R.string.object_dog, listOf("puppy"))
 )
 

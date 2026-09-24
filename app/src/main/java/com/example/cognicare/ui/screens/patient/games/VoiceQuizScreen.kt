@@ -238,6 +238,7 @@ private fun AnswerChoice(
         label = label,
         onClick = onClick,
         enabled = state.isAwaitingAnswer,
-        highlighted = state.feedback != AnswerFeedback.NONE && isCorrectOption
+        highlighted = state.feedback != AnswerFeedback.NONE && isCorrectOption,
+        isError = state.feedback == AnswerFeedback.INCORRECT && label == state.selectedOption
     )
 }
