@@ -22,6 +22,15 @@ private val relationLabels = mapOf(
     "husband" to R.string.relation_husband
 )
 
+// Romanized Hindi words for the same relations, accepted regardless of app language.
+private val relationHindiSynonyms = mapOf(
+    "grandson" to listOf("pota"),
+    "son" to listOf("beta"),
+    "granddaughter" to listOf("poti"),
+    "daughter-in-law" to listOf("bahu"),
+    "husband" to listOf("pati", "shauhar")
+)
+
 /**
  * "Who is this?" using one zoomed-in face at a time from the family photo. Either the name or the
  * relationship counts; for the patient's own face, "me" counts too.
@@ -43,8 +52,9 @@ class FamilyIdentificationViewModel @Inject constructor(
             val accepted = if (member.isPatient) {
                 listOf(member.name, "me", "myself")
             } else {
-                // Both words count, and the English relation stays accepted for mixed answers.
-                listOf(member.name, relation, member.relation)
+                // Both words count, and the English and Hindi relation words stay accepted for
+                // mixed-language answers.
+                listOf(member.name, relation, member.relation) + relationHindiSynonyms[member.relation].orEmpty()
             }
             val answerLabel = if (member.isPatient) {
                 locale.getString(R.string.family_answer_self, member.name)

@@ -11,14 +11,17 @@ import javax.inject.Inject
 
 private data class NamedObject(val emoji: String, @StringRes val nameRes: Int, val synonyms: List<String> = emptyList())
 
-// Watch and pencil mirror the MMSE naming item; the rest are everyday objects.
+// Watch and pencil mirror the MMSE naming item; the rest are everyday objects. Romanized
+// regional-language words are accepted alongside English and the app's own language string, so a
+// patient who answers in Hindi/Bengali/Assamese still counts as correct regardless of app language.
 private val namingObjects = listOf(
-    NamedObject("⌚", R.string.object_watch, listOf("wristwatch")),
+    NamedObject("⌚", R.string.object_watch, listOf("wristwatch", "ghadi", "ghari")),
     NamedObject("✏️", R.string.object_pencil),
-    NamedObject("🍎", R.string.object_apple),
+    NamedObject("🍎", R.string.object_apple, listOf("seb", "saib")),
     // "chabi"/"chaabi" is the common Hindi/Urdu romanization for "key".
     NamedObject("🔑", R.string.object_key, listOf("keys", "chabi", "chaabi")),
-    NamedObject("🐶", R.string.object_dog, listOf("puppy"))
+    // "kutta" (Hindi) and "kukur" (Bengali/Assamese) both mean dog.
+    NamedObject("🐶", R.string.object_dog, listOf("puppy", "kutta", "kutte", "kukur"))
 )
 
 @HiltViewModel

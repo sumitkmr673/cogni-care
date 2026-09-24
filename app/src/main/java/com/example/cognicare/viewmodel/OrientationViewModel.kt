@@ -81,7 +81,9 @@ class OrientationViewModel @Inject constructor(
                 visual = QuizVisual.Emoji("☀️"),
                 correctOption = weekday,
                 answerLabel = weekday,
-                acceptedAnswers = listOf(weekday),
+                // Romanized Hindi day names are accepted regardless of app language, so a spoken
+                // "Sombar" still counts even when the app itself is set to English.
+                acceptedAnswers = listOf(weekday) + hindiWeekdaySynonyms(now.get(Calendar.DAY_OF_WEEK)),
                 options = quizChoices(weekday, symbols.weekdays.filter { it.isNotBlank() })
             ),
             VoiceQuizQuestion(
@@ -90,11 +92,23 @@ class OrientationViewModel @Inject constructor(
                 visual = QuizVisual.Emoji("🏠"),
                 correctOption = home,
                 answerLabel = home,
-                // The English words stay accepted so a mixed-language answer still counts.
-                acceptedAnswers = listOf(home, "home", "house"),
+                // The English and Hindi words stay accepted so a mixed-language answer still counts.
+                acceptedAnswers = listOf(home, "home", "house", "ghar"),
                 options = quizChoices(home, places)
             )
         )
+    }
+
+    /** Common romanized Hindi names for the given Calendar.DAY_OF_WEEK, spelling variants included. */
+    private fun hindiWeekdaySynonyms(dayOfWeek: Int): List<String> = when (dayOfWeek) {
+        Calendar.SUNDAY -> listOf("ravivar", "ravivaar", "itwar", "etwar")
+        Calendar.MONDAY -> listOf("sombar", "somwar", "somvar")
+        Calendar.TUESDAY -> listOf("mangalwar", "mangalvar", "mangalvaar")
+        Calendar.WEDNESDAY -> listOf("budhwar", "budhvar", "budhvaar")
+        Calendar.THURSDAY -> listOf("guruwar", "guruvar", "brihaspativar")
+        Calendar.FRIDAY -> listOf("shukrawar", "shukravar", "shukravaar")
+        Calendar.SATURDAY -> listOf("shanivar", "shanivaar", "shaniwar")
+        else -> emptyList()
     }
 
     /** English ordinals only; other languages accept the plain number. */
