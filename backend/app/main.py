@@ -1,13 +1,15 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+import app.models  # noqa: F401
 from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.care_team import router as care_team_router
 from app.api.gameplay import router as gameplay_router
-from app.db.session import engine
+from app.db.session import Base, engine
 
 
 def _get_cors_origins() -> list[str]:
@@ -34,10 +36,19 @@ def _get_cors_origins() -> list[str]:
     return result
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure all tables exist on startup (e.g. on fresh or upgraded container deployments)
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
 app = FastAPI(
     title="SIH2026 Backend",
     version="0.1.0",
+    lifespan=lifespan,
 )
+
 
 app.add_middleware(
     CORSMiddleware,
