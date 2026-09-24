@@ -151,6 +151,39 @@ class PatientDeviceSetupViewModel @Inject constructor(
         }
     }
 
+    // --- Login with an existing Patient ID (returning patient, new device) ---
+    fun onDismissLoginCoachmark() = _uiState.update { it.copy(showLoginCoachmark = false) }
+
+    fun onShowLoginWithIdDialog() = _uiState.update {
+        it.copy(isLoginWithIdDialogVisible = true, showLoginCoachmark = false, loginWithIdError = null)
+    }
+
+    fun onDismissLoginWithIdDialog() = _uiState.update {
+        it.copy(isLoginWithIdDialogVisible = false, loginPublicId = "", loginWithIdError = null)
+    }
+
+    fun onLoginPublicIdChange(value: String) = _uiState.update {
+        it.copy(loginPublicId = value.uppercase(), loginWithIdError = null)
+    }
+
+    fun onSubmitLoginWithId() {
+        val state = _uiState.value
+        if (!state.canSubmitLoginWithId) return
+
+        _uiState.update { it.copy(isLoggingInWithId = true, loginWithIdError = null) }
+        viewModelScope.launch {
+            val result = authRepository.loginPatientWithId(state.loginPublicId.trim())
+            when (result) {
+                is AuthResult.Success -> _uiState.update {
+                    it.copy(isLoggingInWithId = false, isLoginWithIdDialogVisible = false, loginPublicId = "")
+                }
+                is AuthResult.Failure -> _uiState.update {
+                    it.copy(isLoggingInWithId = false, loginWithIdError = result.reason)
+                }
+            }
+        }
+    }
+
     fun onCompleteSetup() {
         val session = _uiState.value.pendingSession ?: return
         viewModelScope.launch {

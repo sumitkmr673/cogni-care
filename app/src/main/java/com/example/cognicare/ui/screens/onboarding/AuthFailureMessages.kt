@@ -9,5 +9,6 @@ fun AuthFailure.toMessageRes(): Int = when (this) {
     AuthFailure.NAME_NOT_RECOGNIZED -> R.string.patient_login_error
     AuthFailure.LOCKED_OUT -> R.string.patient_login_locked_body
     AuthFailure.DEVICE_ALREADY_BOUND -> R.string.error_device_already_bound
+    AuthFailure.PATIENT_ID_NOT_FOUND -> R.string.error_patient_id_not_found
     AuthFailure.INVALID_CREDENTIALS, AuthFailure.NOT_SET_UP -> R.string.error_invalid_credentials
 }

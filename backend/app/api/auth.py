@@ -24,6 +24,8 @@ from app.schemas.auth import (
 )
 from app.schemas.device import (
     DeviceLoginRequest,
+    PatientLoginByIdRequest,
+    PatientLoginByIdResponse,
     PatientRegisterRequest,
     PatientRegisterResponse,
 )
@@ -248,6 +250,87 @@ def register_patient(payload: PatientRegisterRequest, db: Session = Depends(get_
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Patient register error ({type(exc).__name__}): {str(exc)}",
+        )
+
+
+@router.post("/patient/login-with-id", response_model=PatientLoginByIdResponse)
+def login_patient_with_id(payload: PatientLoginByIdRequest, db: Session = Depends(get_db)) -> PatientLoginByIdResponse:
+    """Binds a new device to an existing patient by their public ID (e.g. reinstalling the app
+    or setting up a replacement device), revoking whichever device was previously active."""
+    try:
+        normalized_public_id = payload.public_id.strip().upper()
+        patient = db.scalar(select(Patient).where(Patient.public_id == normalized_public_id))
+        if patient is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No patient found with that ID",
+            )
+
+        user = db.scalar(select(User).where(User.id == patient.user_id))
+        if user is None or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Patient account is inactive",
+            )
+
+        client_device_id = payload.client_device_id.strip() if payload.client_device_id else None
+        if client_device_id:
+            other_patient_device = db.scalar(
+                select(PatientDevice).where(
+                    PatientDevice.client_device_id == client_device_id,
+                    PatientDevice.status == "ACTIVE",
+                    PatientDevice.patient_id != patient.id,
+                )
+            )
+            if other_patient_device is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This device is already active for another patient",
+                )
+
+        active_devices = db.scalars(
+            select(PatientDevice).where(
+                PatientDevice.patient_id == patient.id,
+                PatientDevice.status == "ACTIVE",
+            )
+        ).all()
+        for device in active_devices:
+            device.status = "REVOKED"
+            device.revoked_at = datetime.now(timezone.utc)
+        db.flush()
+
+        device_identifier = generate_device_identifier()
+        device_key = secrets.token_urlsafe(32)
+        device = PatientDevice(
+            patient_id=patient.id,
+            device_identifier=device_identifier,
+            client_device_id=client_device_id,
+            device_name=payload.device_name.strip() if payload.device_name else None,
+            device_key_hash=hash_password(device_key),
+            status="ACTIVE",
+        )
+        db.add(device)
+        db.commit()
+
+        access_token = create_access_token(user.id)
+        return PatientLoginByIdResponse(
+            patient_id=patient.id,
+            patient_public_id=patient.public_id,
+            display_name=user.display_name,
+            device_identifier=device.device_identifier,
+            device_key=device_key,
+            token=TokenResponse(access_token=access_token),
+        )
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Patient login error ({type(exc).__name__}): {str(exc)}",
         )
 
 

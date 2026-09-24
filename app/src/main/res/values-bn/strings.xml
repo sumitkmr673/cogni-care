@@ -11,6 +11,7 @@
     <!-- Actions -->
     <string name="action_back">পিছনে</string>
     <string name="action_go_back">পিছনে যান</string>
+    <string name="action_cancel">বাতিল করুন</string>
     <string name="action_continue">চালিয়ে যান</string>
     <string name="action_details">বিবরণ</string>
     <string name="action_see_all">সব দেখুন</string>
@@ -88,6 +89,14 @@
     <string name="simple_reg_welcome_lead">চলুন আপনার অ্যাপ প্রস্তুত করি।</string>
     <string name="simple_reg_welcome_action">শুরু করুন</string>
     <string name="simple_reg_caregiver_switch">সেবাদাতা? এখানে সাইন ইন করুন</string>
+
+    <string name="patient_login_with_id_button">লগইন</string>
+    <string name="patient_login_with_id_coachmark">আপনি কি ইতিমধ্যে একজন রোগী? আপনার রোগী আইডি দিয়ে লগইন করতে এখানে ট্যাপ করুন</string>
+    <string name="patient_login_with_id_title">আপনার রোগী আইডি দিয়ে লগইন করুন</string>
+    <string name="patient_login_with_id_lead">সাইন আপ করার সময় আপনাকে দেওয়া রোগী আইডি লিখুন।</string>
+    <string name="patient_login_with_id_field">রোগী আইডি</string>
+    <string name="patient_login_with_id_submit">লগইন</string>
+    <string name="error_patient_id_not_found">এই আইডি দিয়ে কোনো রোগী পাওয়া যায়নি। কোডটি পরীক্ষা করে আবার চেষ্টা করুন।</string>
 
     <string name="simple_reg_name_title">আপনার নাম কী?</string>
     <string name="simple_reg_name_lead">আপনাকে অভিবাদন জানাতে আমরা এটি ব্যবহার করব।</string>
@@ -353,6 +362,12 @@
     <string name="patients_meta">%1$s · %2$s</string>
     <string name="patients_add_title">রোগী যুক্ত করুন</string>
     <string name="patients_add_body">নতুন রোগী যুক্ত করতে রোগী বা তাঁর অভিভাবকের অবহিত সম্মতি প্রয়োজন।</string>
+    <string name="patients_link_dialog_title">একজন বিদ্যমান রোগীকে লিঙ্ক করুন</string>
+    <string name="patients_link_dialog_lead">রোগীর পাবলিক আইডি লিখুন (যেমন PT-XXXXXXXX)। তাঁর প্রাথমিক সেবাদাতা না থাকলে আপনি প্রাথমিক সেবাদাতা হবেন, নাহলে সেকেন্ডারি সেবাদাতা হিসেবে যুক্ত হবেন।</string>
+    <string name="patients_link_dialog_field">রোগীর পাবলিক আইডি</string>
+    <string name="patients_link_dialog_submit">রোগী লিঙ্ক করুন</string>
+    <string name="error_patient_link_not_found">এই আইডি দিয়ে কোনো রোগী পাওয়া যায়নি। কোডটি পরীক্ষা করে আবার চেষ্টা করুন।</string>
+    <string name="error_patient_link_already_linked">এই রোগী ইতিমধ্যে আপনার অ্যাকাউন্টের সাথে যুক্ত আছেন।</string>
 
     <!-- Settings -->
     <string name="settings_eyebrow">পছন্দসমূহ</string>

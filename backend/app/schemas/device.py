@@ -44,6 +44,12 @@ class DeviceRevokeResponse(BaseModel):
     revoked_at: datetime
 
 
+class PatientLoginByIdRequest(BaseModel):
+    public_id: str = Field(min_length=1, max_length=30)
+    client_device_id: str | None = Field(default=None, max_length=128)
+    device_name: str | None = Field(default=None, max_length=100)
+
+
 class PatientRegisterRequest(BaseModel):
     display_name: str = Field(min_length=1, max_length=150)
     date_of_birth: date | None = None
@@ -60,3 +66,7 @@ class PatientRegisterResponse(BaseModel):
     device_identifier: str
     device_key: str
     token: TokenResponse
+
+
+class PatientLoginByIdResponse(PatientRegisterResponse):
+    pass

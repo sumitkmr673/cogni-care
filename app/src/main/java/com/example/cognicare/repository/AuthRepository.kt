@@ -52,6 +52,12 @@ interface AuthRepository {
      */
     suspend fun signInPatient(spokenOrTypedName: String): AuthResult
 
+    /**
+     * Binds this device to an existing patient by their public ID (e.g. a patient reinstalling
+     * the app or moving to a new device), replacing whichever device was previously active.
+     */
+    suspend fun loginPatientWithId(publicId: String): AuthResult
+
     suspend fun signInCaregiver(email: String, password: String): AuthResult
 
     suspend fun signOut()
@@ -68,5 +74,6 @@ enum class AuthFailure {
     INVALID_CREDENTIALS,
     NETWORK_ERROR,
     NOT_SET_UP,
-    DEVICE_ALREADY_BOUND
+    DEVICE_ALREADY_BOUND,
+    PATIENT_ID_NOT_FOUND
 }

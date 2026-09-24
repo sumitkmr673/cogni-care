@@ -20,6 +20,11 @@ data class PatientsResponseDto(
 )
 
 @Serializable
+data class PatientLinkRequestDto(
+    val public_id: String
+)
+
+@Serializable
 data class PatientProfileDto(
     val id: String,
     val display_name: String,

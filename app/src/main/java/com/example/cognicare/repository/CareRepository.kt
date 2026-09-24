@@ -24,4 +24,19 @@ interface CareRepository {
     /** Starts and submits a backend game session for the signed-in patient. No-ops (and never
      * throws) for a [GameType] with no backend counterpart — see [toBackendCode]. */
     suspend fun recordGameCompletion(gameType: GameType, outcome: GameOutcome)
+
+    /** Links an existing patient (by their public ID) to the signed-in caregiver, becoming the
+     * primary caregiver if the patient doesn't have one yet, or a secondary one otherwise. */
+    suspend fun linkPatient(publicId: String): LinkPatientResult
+}
+
+sealed interface LinkPatientResult {
+    data class Success(val patient: PatientProfile) : LinkPatientResult
+    data class Failure(val reason: LinkPatientFailure) : LinkPatientResult
+}
+
+enum class LinkPatientFailure {
+    NOT_FOUND,
+    ALREADY_LINKED,
+    NETWORK_ERROR
 }

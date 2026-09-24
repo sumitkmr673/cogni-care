@@ -17,6 +17,7 @@ import com.example.cognicare.data.model.Reminder
 import com.example.cognicare.data.model.ReminderKind
 import com.example.cognicare.data.model.SyncStatus
 import com.example.cognicare.data.remote.CogniCareApi
+import com.example.cognicare.data.remote.dto.PatientLinkRequestDto
 import com.example.cognicare.data.remote.dto.PatientProfileDto
 import com.example.cognicare.data.remote.dto.PatientSummaryDto
 import com.example.cognicare.data.remote.dto.RecentGameSessionDto
@@ -101,6 +102,22 @@ class RemoteCareRepository @Inject constructor(
             Log.w(TAG, "recordGameCompletion($gameType) failed: HTTP ${error.code()}", error)
         } catch (error: IOException) {
             Log.w(TAG, "recordGameCompletion($gameType) failed: offline", error)
+        }
+    }
+
+    override suspend fun linkPatient(publicId: String): LinkPatientResult {
+        return try {
+            val response = api.linkPatient(PatientLinkRequestDto(public_id = publicId.trim().uppercase()))
+            LinkPatientResult.Success(response.toPatientProfile())
+        } catch (error: HttpException) {
+            val reason = when (error.code()) {
+                404 -> LinkPatientFailure.NOT_FOUND
+                409 -> LinkPatientFailure.ALREADY_LINKED
+                else -> LinkPatientFailure.NETWORK_ERROR
+            }
+            LinkPatientResult.Failure(reason)
+        } catch (error: IOException) {
+            LinkPatientResult.Failure(LinkPatientFailure.NETWORK_ERROR)
         }
     }
 

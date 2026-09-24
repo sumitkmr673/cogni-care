@@ -66,6 +66,13 @@ data class PatientRegisterRequestDto(
 )
 
 @Serializable
+data class PatientLoginByIdRequestDto(
+    val public_id: String,
+    val client_device_id: String? = null,
+    val device_name: String? = null
+)
+
+@Serializable
 data class PatientRegisterResponseDto(
     val patient_id: String,
     val patient_public_id: String,

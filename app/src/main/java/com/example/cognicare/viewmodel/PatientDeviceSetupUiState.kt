@@ -41,7 +41,12 @@ data class PatientDeviceSetupUiState(
     val password: String = "",
     val isSubmitting: Boolean = false,
     val error: AuthFailure? = null,
-    val dobError: Boolean = false
+    val dobError: Boolean = false,
+    val showLoginCoachmark: Boolean = true,
+    val isLoginWithIdDialogVisible: Boolean = false,
+    val loginPublicId: String = "",
+    val isLoggingInWithId: Boolean = false,
+    val loginWithIdError: AuthFailure? = null
 ) {
     val selectedDay: Int
         get() = birthDay.toIntOrNull() ?: 15
@@ -85,4 +90,7 @@ data class PatientDeviceSetupUiState(
 
     val canSubmitCaregiver: Boolean
         get() = email.isNotBlank() && password.isNotBlank() && !isSubmitting
+
+    val canSubmitLoginWithId: Boolean
+        get() = loginPublicId.trim().isNotBlank() && !isLoggingInWithId
 }

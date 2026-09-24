@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
@@ -29,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Lock
@@ -45,6 +47,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +56,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -61,13 +66,17 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.Popup
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
 import com.example.cognicare.core.locale.AppLanguage
 import com.example.cognicare.data.demo.DemoData
+import com.example.cognicare.repository.AuthFailure
 import com.example.cognicare.ui.components.BackTextButton
 import com.example.cognicare.ui.components.BrandLockup
 import com.example.cognicare.ui.components.DemoNote
@@ -198,9 +207,48 @@ fun PatientDeviceSetupScreen(
             } else {
                 when (state.step) {
                     PatientSetupStep.WELCOME -> {
-                        Spacer(Modifier.height(24.dp))
-                        BrandLockup(tagline = stringResource(R.string.brand_tagline_patient))
-                        Spacer(Modifier.height(36.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            BrandLockup(
+                                tagline = stringResource(R.string.brand_tagline_patient),
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            Box {
+                                TextButton(
+                                    onClick = viewModel::onShowLoginWithIdDialog,
+                                    modifier = Modifier.heightIn(min = PatientTheme.dimens.minTouchTarget)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.patient_login_with_id_button),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                // A Popup renders in its own layer, so its 230dp-wide bubble never
+                                // affects this Row's measured size or pushes the button around.
+                                if (state.showLoginCoachmark) {
+                                    val density = LocalDensity.current
+                                    Popup(
+                                        alignment = Alignment.TopEnd,
+                                        offset = with(density) {
+                                            IntOffset(0, PatientTheme.dimens.minTouchTarget.roundToPx())
+                                        },
+                                        onDismissRequest = viewModel::onDismissLoginCoachmark
+                                    ) {
+                                        LoginCoachmark(
+                                            text = stringResource(R.string.patient_login_with_id_coachmark),
+                                            onTap = viewModel::onShowLoginWithIdDialog,
+                                            onDismiss = viewModel::onDismissLoginCoachmark
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(52.dp))
 
                         Box(
                             modifier = Modifier
@@ -593,6 +641,130 @@ fun PatientDeviceSetupScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    if (state.isLoginWithIdDialogVisible) {
+        LoginWithIdDialog(
+            publicId = state.loginPublicId,
+            error = state.loginWithIdError,
+            isSubmitting = state.isLoggingInWithId,
+            canSubmit = state.canSubmitLoginWithId,
+            onPublicIdChange = viewModel::onLoginPublicIdChange,
+            onSubmit = viewModel::onSubmitLoginWithId,
+            onDismiss = viewModel::onDismissLoginWithIdDialog
+        )
+    }
+}
+
+@Composable
+private fun LoginCoachmark(
+    text: String,
+    onTap: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.width(230.dp), horizontalAlignment = Alignment.End) {
+        Box(
+            modifier = Modifier
+                .padding(end = 20.dp)
+                .size(14.dp)
+                .rotate(45f)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(3.dp))
+        )
+        Surface(
+            onClick = onTap,
+            modifier = Modifier.offset(y = (-7).dp),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.primary,
+            shadowElevation = 6.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.action_go_back),
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoginWithIdDialog(
+    publicId: String,
+    error: AuthFailure?,
+    isSubmitting: Boolean,
+    canSubmit: Boolean,
+    onPublicIdChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                ScreenTitle(stringResource(R.string.patient_login_with_id_title))
+                Spacer(Modifier.height(8.dp))
+                LeadText(stringResource(R.string.patient_login_with_id_lead))
+                Spacer(Modifier.height(20.dp))
+
+                OutlinedTextField(
+                    value = publicId,
+                    onValueChange = onPublicIdChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.patient_login_with_id_field)) },
+                    leadingIcon = { Icon(Icons.Rounded.Person, contentDescription = null) },
+                    singleLine = true,
+                    enabled = !isSubmitting,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Characters,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+                    shape = RoundedCornerShape(14.dp),
+                    textStyle = MaterialTheme.typography.titleLarge
+                )
+
+                if (error != null) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(error.toMessageRes()),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Spacer(Modifier.height(24.dp))
+                PatientPrimaryButton(
+                    text = stringResource(R.string.patient_login_with_id_submit),
+                    onClick = onSubmit,
+                    enabled = canSubmit,
+                    isLoading = isSubmitting,
+                    showArrow = false
+                )
+                Spacer(Modifier.height(12.dp))
+                TextLinkButton(
+                    text = stringResource(R.string.action_cancel),
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

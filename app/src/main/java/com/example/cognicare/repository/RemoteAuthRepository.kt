@@ -8,6 +8,7 @@ import com.example.cognicare.data.model.UserRole
 import com.example.cognicare.data.remote.CogniCareApi
 import com.example.cognicare.data.remote.dto.DeviceLoginRequestDto
 import com.example.cognicare.data.remote.dto.LoginRequestDto
+import com.example.cognicare.data.remote.dto.PatientLoginByIdRequestDto
 import com.example.cognicare.data.remote.dto.PatientRegisterRequestDto
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
@@ -141,6 +142,46 @@ class RemoteAuthRepository @Inject constructor(
             }
         }
         return result
+    }
+
+    override suspend fun loginPatientWithId(publicId: String): AuthResult {
+        return try {
+            val clientDeviceId = credentialStore.getOrCreateClientDeviceId()
+            val response = api.loginPatientWithId(
+                PatientLoginByIdRequestDto(
+                    public_id = publicId.trim().uppercase(),
+                    client_device_id = clientDeviceId
+                )
+            )
+            val session = AuthSession(
+                userId = response.patient_id,
+                displayName = response.display_name,
+                role = UserRole.PATIENT,
+                accessToken = response.token.access_token,
+                publicId = response.patient_public_id,
+                patientId = response.patient_id
+            )
+            withContext(NonCancellable) {
+                credentialStore.saveDeviceCredentials(
+                    deviceIdentifier = response.device_identifier,
+                    deviceKey = response.device_key,
+                    patientPublicId = response.patient_public_id
+                )
+                preferences.setPatientRegisteredName(response.display_name)
+                preferences.resetPatientNameAttempts()
+                preferences.saveSession(session)
+            }
+            AuthResult.Success(session)
+        } catch (error: HttpException) {
+            when (error.code()) {
+                404 -> AuthResult.Failure(AuthFailure.PATIENT_ID_NOT_FOUND)
+                409 -> AuthResult.Failure(AuthFailure.DEVICE_ALREADY_BOUND)
+                401, 422 -> AuthResult.Failure(AuthFailure.INVALID_CREDENTIALS)
+                else -> AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+            }
+        } catch (error: IOException) {
+            AuthResult.Failure(AuthFailure.NETWORK_ERROR)
+        }
     }
 
     override suspend fun signInCaregiver(email: String, password: String): AuthResult {

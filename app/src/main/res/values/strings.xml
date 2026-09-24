@@ -11,6 +11,7 @@
     <!-- Actions -->
     <string name="action_back">Back</string>
     <string name="action_go_back">Go back</string>
+    <string name="action_cancel">Cancel</string>
     <string name="action_continue">Continue</string>
     <string name="action_details">Details</string>
     <string name="action_see_all">See all</string>
@@ -88,6 +89,14 @@
     <string name="simple_reg_welcome_lead">Let\'s get your app ready.</string>
     <string name="simple_reg_welcome_action">Get Started</string>
     <string name="simple_reg_caregiver_switch">Caregiver? Sign in here</string>
+
+    <string name="patient_login_with_id_button">Login</string>
+    <string name="patient_login_with_id_coachmark">Already a patient? Tap here to login with your patient ID</string>
+    <string name="patient_login_with_id_title">Login with your Patient ID</string>
+    <string name="patient_login_with_id_lead">Enter the Patient ID you were given when you first signed up.</string>
+    <string name="patient_login_with_id_field">Patient ID</string>
+    <string name="patient_login_with_id_submit">Login</string>
+    <string name="error_patient_id_not_found">We couldn\'t find a patient with that ID. Check the code and try again.</string>
 
     <string name="simple_reg_name_title">What is your name?</string>
     <string name="simple_reg_name_lead">We\'ll use this to greet you.</string>
@@ -353,6 +362,12 @@
     <string name="patients_meta">%1$s · %2$s</string>
     <string name="patients_add_title">Add a patient</string>
     <string name="patients_add_body">Linking a new patient requires informed consent from the patient or their guardian.</string>
+    <string name="patients_link_dialog_title">Link an existing patient</string>
+    <string name="patients_link_dialog_lead">Enter the patient\'s public ID (e.g. PT-XXXXXXXX). You\'ll become their primary caregiver if they don\'t have one yet, or a secondary caregiver otherwise.</string>
+    <string name="patients_link_dialog_field">Patient Public ID</string>
+    <string name="patients_link_dialog_submit">Link patient</string>
+    <string name="error_patient_link_not_found">No patient found with that ID. Check the code and try again.</string>
+    <string name="error_patient_link_already_linked">This patient is already linked to your account.</string>
 
     <!-- Settings -->
     <string name="settings_eyebrow">Preferences</string>
