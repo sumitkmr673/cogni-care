@@ -38,8 +38,22 @@ def _get_cors_origins() -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure all tables exist on startup (e.g. on fresh or upgraded container deployments)
-    Base.metadata.create_all(bind=engine)
+    # Ensure all tables exist on startup
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("INFO: Base.metadata.create_all completed.")
+    except Exception as exc:
+        print(f"ERROR Base.metadata.create_all: {exc}")
+
+    try:
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        print("INFO: alembic upgrade head completed successfully.")
+    except Exception as exc:
+        print(f"INFO alembic migration notice: {exc}")
+
     yield
 
 
@@ -74,8 +88,23 @@ async def database_health():
     with engine.connect() as connection:
         result = connection.execute(text("SELECT 1"))
         value = result.scalar()
+        tables_res = connection.execute(
+            text("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")
+        )
+        tables = [r[0] for r in tables_res.fetchall()]
+
+        alembic_versions = []
+        try:
+            alembic_res = connection.execute(text("SELECT version_num FROM alembic_version"))
+            alembic_versions = [r[0] for r in alembic_res.fetchall()]
+        except Exception:
+            pass
 
     return {
         "database": "connected",
         "result": value,
+        "tables": tables,
+        "alembic_versions": alembic_versions,
+        "version": "v1.0.4-tables",
     }
+

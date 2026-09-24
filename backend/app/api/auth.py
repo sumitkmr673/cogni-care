@@ -118,113 +118,137 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> TokenResp
 
 @router.post("/device-login", response_model=TokenResponse)
 def login_device(payload: DeviceLoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    device = db.scalar(
-        select(PatientDevice).where(PatientDevice.device_identifier == payload.device_identifier.strip())
-    )
-    if device is None or device.status != "ACTIVE":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=INVALID_DEVICE_CREDENTIALS,
-            headers={"WWW-Authenticate": "Bearer"},
+    try:
+        device = db.scalar(
+            select(PatientDevice).where(PatientDevice.device_identifier == payload.device_identifier.strip())
         )
+        if device is None or device.status != "ACTIVE":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=INVALID_DEVICE_CREDENTIALS,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    if not verify_password(payload.device_key, device.device_key_hash):
+        if not verify_password(payload.device_key, device.device_key_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=INVALID_DEVICE_CREDENTIALS,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        patient = db.scalar(select(Patient).where(Patient.id == device.patient_id))
+        if patient is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Patient not found",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        user = db.scalar(select(User).where(User.id == patient.user_id))
+        if user is None or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Patient account is inactive",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        device.last_seen_at = datetime.now(timezone.utc)
+        db.commit()
+
+        return TokenResponse(access_token=create_access_token(user.id))
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=INVALID_DEVICE_CREDENTIALS,
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Device login error ({type(exc).__name__}): {str(exc)}",
         )
-
-    patient = db.scalar(select(Patient).where(Patient.id == device.patient_id))
-    if patient is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Patient not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user = db.scalar(select(User).where(User.id == patient.user_id))
-    if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Patient account is inactive",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    device.last_seen_at = datetime.now(timezone.utc)
-    db.commit()
-
-    return TokenResponse(access_token=create_access_token(user.id))
 
 
 @router.post("/patient/register", response_model=PatientRegisterResponse, status_code=status.HTTP_201_CREATED)
 def register_patient(payload: PatientRegisterRequest, db: Session = Depends(get_db)) -> PatientRegisterResponse:
-    client_device_id = payload.client_device_id.strip() if payload.client_device_id else None
+    try:
+        client_device_id = payload.client_device_id.strip() if payload.client_device_id else None
 
-    if client_device_id:
-        existing_device = db.scalar(
-            select(PatientDevice).where(
-                PatientDevice.client_device_id == client_device_id,
-                PatientDevice.status == "ACTIVE",
+        if client_device_id:
+            existing_device = db.scalar(
+                select(PatientDevice).where(
+                    PatientDevice.client_device_id == client_device_id,
+                    PatientDevice.status == "ACTIVE",
+                )
             )
+            if existing_device is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This device is already active for another patient",
+                )
+
+        user = User(
+            display_name=payload.display_name.strip(),
+            role="PATIENT",
+            is_active=True,
         )
-        if existing_device is not None:
+        db.add(user)
+        db.flush()
+
+        for _ in range(10):
+            code = generate_patient_public_id()
+            if not db.scalar(select(Patient).where(Patient.public_id == code)):
+                break
+        else:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="This device is already active for another patient",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Could not generate unique patient ID",
             )
 
-    user = User(
-        display_name=payload.display_name.strip(),
-        role="PATIENT",
-        is_active=True,
-    )
-    db.add(user)
-    db.flush()
+        patient = Patient(
+            user_id=user.id,
+            public_id=code,
+            date_of_birth=payload.date_of_birth,
+            gender=payload.gender.strip() if payload.gender else None,
+            preferred_language=payload.preferred_language.strip() if payload.preferred_language else "English",
+        )
+        db.add(patient)
+        db.flush()
 
-    for _ in range(10):
-        code = generate_patient_public_id()
-        if not db.scalar(select(Patient).where(Patient.public_id == code)):
-            break
-    else:
+        device_identifier = generate_device_identifier()
+        device_key = secrets.token_urlsafe(32)
+        device = PatientDevice(
+            patient_id=patient.id,
+            device_identifier=device_identifier,
+            client_device_id=client_device_id,
+            device_name=payload.device_name.strip() if payload.device_name else None,
+            device_key_hash=hash_password(device_key),
+            status="ACTIVE",
+        )
+        db.add(device)
+        db.commit()
+        db.refresh(patient)
+
+        access_token = create_access_token(user.id)
+        return PatientRegisterResponse(
+            patient_id=patient.id,
+            patient_public_id=patient.public_id,
+            display_name=user.display_name,
+            device_identifier=device.device_identifier,
+            device_key=device_key,
+            token=TokenResponse(access_token=access_token),
+        )
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as exc:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not generate unique patient ID",
+            detail=f"Patient register error ({type(exc).__name__}): {str(exc)}",
         )
-
-    patient = Patient(
-        user_id=user.id,
-        public_id=code,
-        date_of_birth=payload.date_of_birth,
-        gender=payload.gender.strip() if payload.gender else None,
-        preferred_language=payload.preferred_language.strip() if payload.preferred_language else "English",
-    )
-    db.add(patient)
-    db.flush()
-
-    device_identifier = generate_device_identifier()
-    device_key = secrets.token_urlsafe(32)
-    device = PatientDevice(
-        patient_id=patient.id,
-        device_identifier=device_identifier,
-        client_device_id=client_device_id,
-        device_name=payload.device_name.strip() if payload.device_name else None,
-        device_key_hash=hash_password(device_key),
-        status="ACTIVE",
-    )
-    db.add(device)
-    db.commit()
-    db.refresh(patient)
-
-    access_token = create_access_token(user.id)
-    return PatientRegisterResponse(
-        patient_id=patient.id,
-        patient_public_id=patient.public_id,
-        display_name=user.display_name,
-        device_identifier=device.device_identifier,
-        device_key=device_key,
-        token=TokenResponse(access_token=access_token),
-    )
 
 
 @router.get("/me", response_model=AuthenticatedUserResponse)
