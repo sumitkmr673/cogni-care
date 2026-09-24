@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.cognicare.R
+import com.example.cognicare.ui.theme.Leaf500
 import com.example.cognicare.viewmodel.AssistantNavigation
 import com.example.cognicare.viewmodel.VoiceAssistantViewModel
 
@@ -162,7 +164,11 @@ private fun ExpandedAssistant(
             isListening = controller.isListening,
             onClick = capture.onSpeakClick,
             size = 68.dp,
-            idleIcon = Icons.Rounded.SmartToy
+            idleIcon = Icons.Rounded.SmartToy,
+            showLabel = false,
+            containerColor = if (controller.isListening) MaterialTheme.colorScheme.error else Color.White,
+            contentColor = if (controller.isListening) Color.White else Leaf500,
+            border = if (controller.isListening) null else BorderStroke(2.dp, Leaf500)
         )
     }
 }

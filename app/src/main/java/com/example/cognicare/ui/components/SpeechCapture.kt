@@ -15,6 +15,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -293,14 +294,16 @@ fun SpeakButton(
     enabled: Boolean = true,
     size: Dp = 168.dp,
     idleIcon: ImageVector = Icons.Rounded.Mic,
-    showLabel: Boolean = true
+    showLabel: Boolean = true,
+    containerColor: Color = if (isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+    contentColor: Color = Color.White,
+    border: BorderStroke? = null
 ) {
-    val container = if (isListening) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val label = stringResource(if (isListening) R.string.speech_button_listening else R.string.speech_button_idle)
     val haptics = LocalHapticFeedback.current
 
     Box(modifier = modifier.size(size * 1.25f), contentAlignment = Alignment.Center) {
-        if (isListening) ListeningHalo(color = container, size = size)
+        if (isListening) ListeningHalo(color = containerColor, size = size)
         Surface(
             onClick = {
                 // A physical tick confirms the press for patients who may not notice the colour change.
@@ -313,22 +316,31 @@ fun SpeakButton(
                 .size(size)
                 .then(if (showLabel) Modifier else Modifier.semantics { contentDescription = label }),
             shape = CircleShape,
-            color = if (enabled) container else container.copy(alpha = 0.4f),
-            contentColor = Color.White,
+            color = if (enabled) containerColor else containerColor.copy(alpha = 0.4f),
+            contentColor = contentColor,
+            border = border,
             shadowElevation = 8.dp
         ) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    imageVector = if (isListening) Icons.Rounded.Stop else idleIcon,
-                    contentDescription = null,
-                    modifier = Modifier.size(size * 0.38f)
-                )
+            Box(contentAlignment = Alignment.Center) {
                 if (showLabel) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(text = label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = if (isListening) Icons.Rounded.Stop else idleIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(size * 0.38f)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(text = label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+                    }
+                } else {
+                    Icon(
+                        imageVector = if (isListening) Icons.Rounded.Stop else idleIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(size * 0.38f)
+                    )
                 }
             }
         }
